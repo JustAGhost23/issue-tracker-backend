@@ -1,0 +1,17 @@
+{
+  "name": "issue-tracker-backend",
+  "version": "1.0.0",
+  "description": "A backend for an issue-tracker website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.17",
+    "express": "^4.18.2",
+    "prisma": "^4.16.1"
+  }
+}
