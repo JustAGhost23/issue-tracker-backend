@@ -4,7 +4,7 @@ import { validate } from "../../utils/zodValidateRequest";
 import { z } from "zod";
 
 // Zod schema to validate request
-export const getAllUsersSchema = z.object({
+const getAllUsersSchema = z.object({
   query: z.object({
     items: z
       .string({
