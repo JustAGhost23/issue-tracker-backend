@@ -1,5 +1,9 @@
 import { Router } from "express";
 import { getAllUsersValidator, getAllUsers } from "../controllers/user/getAllUsers";
+import {
+  editCurrentUserValidator,
+  editCurrentUser,
+} from "../controllers/user/editCurrentUser";
 import passport from "../middlewares/passportAuth";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
@@ -11,5 +15,11 @@ const userRouter: Router = Router();
  @desc Get all users
  */
 userRouter.get('/', passportJWT, getAllUsersValidator, getAllUsers);
+
+/**
+ @route /api/user/edit
+ @desc Edit current user details
+ */
+userRouter.post('/edit', passportJWT, editCurrentUserValidator, editCurrentUser);
 
 export default userRouter;

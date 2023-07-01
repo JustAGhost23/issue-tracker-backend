@@ -7,7 +7,7 @@ import { z } from "zod";
 import jwt from "jsonwebtoken";
 
 // Zod schema to validate request
-const editUserSchema = z.object({
+const editCurrentUserSchema = z.object({
   body: z.object({
     username: z
       .string({
@@ -43,7 +43,7 @@ const editUserSchema = z.object({
 
 // Function to validate request using zod schema
 export const editCurrentUserValidator: RequestHandler =
-  validate(editUserSchema);
+  validate(editCurrentUserSchema);
 
 export const editCurrentUser = async (req: Request, res: Response) => {
   try {
