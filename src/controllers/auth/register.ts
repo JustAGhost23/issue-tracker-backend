@@ -75,7 +75,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // Hash password
-    const hashed = hashPassword(req.body.password);
+    const hashed = await hashPassword(req.body.password);
 
     // Create new email verification token
     const token = crypto.randomBytes(16).toString("hex");

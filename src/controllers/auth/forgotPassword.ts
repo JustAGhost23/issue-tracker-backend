@@ -7,7 +7,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 
 // Zod schema to validate request
-export const forgotPasswordSchema = z.object({
+const forgotPasswordSchema = z.object({
   body: z.object({
     email: z
       .string({

@@ -6,7 +6,7 @@ import { validate } from "../../utils/zodValidateRequest";
 import { z } from "zod";
 
 // Zod schema to validate request
-export const verifyEmailSchema = z.object({
+const verifyEmailSchema = z.object({
   query: z.object({
     token: z
       .string({
