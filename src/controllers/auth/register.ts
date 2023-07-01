@@ -1,4 +1,5 @@
 import { User } from "@prisma/client";
+import { Token } from "../../utils/enums";
 import { prisma, redisClient } from "../../config/db";
 import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest";
