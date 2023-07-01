@@ -5,6 +5,7 @@ import { logout } from "../controllers/auth/logout";
 import generateUserToken from "../middlewares/generateToken";
 import passport from "../middlewares/passportAuth";
 import { verifyEmailValidator, verifyEmail } from "../controllers/auth/verifyEmail";
+import { forgotPasswordValidator, forgotPassword } from "../controllers/auth/forgotPassword";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 const passportGoogle = passport.authenticate("google", {
@@ -49,5 +50,11 @@ authRouter.post('/logout', passportJWT, logout);
  @desc Verify User Email
  */
 authRouter.post('/verify-email', verifyEmailValidator, verifyEmail);
+
+/**
+ @route /api/auth/forgot
+ @desc Forgot Password
+ */
+authRouter.post('/forgot', forgotPasswordValidator, forgotPassword);
 
 export default authRouter;
