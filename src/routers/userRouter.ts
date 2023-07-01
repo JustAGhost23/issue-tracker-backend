@@ -8,6 +8,7 @@ import {
   getUserByUsernameValidator,
   getUserByUsername,
 } from "../controllers/user/getUserByUsername";
+import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser";
 import passport from "../middlewares/passportAuth";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
@@ -31,5 +32,11 @@ userRouter.post('/edit', passportJWT, editCurrentUserValidator, editCurrentUser)
  @desc Get user by username
  */
 userRouter.get('/:username', passportJWT, getUserByUsernameValidator, getUserByUsername);
+
+/**
+ @route /api/user/delete
+ @desc Delete current user
+ */
+userRouter.post('/delete', passportJWT, deleteCurrentUser);
 
 export default userRouter;
