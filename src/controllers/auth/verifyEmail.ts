@@ -3,10 +3,7 @@ import { Token } from "../../utils/enums";
 import { prisma, redisClient } from "../../config/db";
 import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest";
-import { hashPassword } from "../../utils/password";
 import { z } from "zod";
-import nodemailer from "nodemailer";
-import crypto from "crypto";
 
 // Zod schema to validate request
 export const verifyEmailSchema = z.object({
