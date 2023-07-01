@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getAllUsersValidator, getAllUsers } from "../controllers/user/getAllUsers";
+import {
+  getAllUsersValidator,
+  getAllUsers,
+} from "../controllers/user/getAllUsers";
 import {
   editCurrentUserValidator,
   editCurrentUser,
@@ -19,24 +22,34 @@ const userRouter: Router = Router();
  @route /api/user/
  @desc Get all users
  */
-userRouter.get('/', passportJWT, getAllUsersValidator, getAllUsers);
+userRouter.get("/", passportJWT, getAllUsersValidator, getAllUsers);
 
 /**
  @route /api/user/edit
  @desc Edit current user details
  */
-userRouter.post('/edit', passportJWT, editCurrentUserValidator, editCurrentUser);
+userRouter.post(
+  "/edit",
+  passportJWT,
+  editCurrentUserValidator,
+  editCurrentUser
+);
 
 /**
  @route /api/user/:username
  @desc Get user by username
  */
-userRouter.get('/:username', passportJWT, getUserByUsernameValidator, getUserByUsername);
+userRouter.get(
+  "/:username",
+  passportJWT,
+  getUserByUsernameValidator,
+  getUserByUsername
+);
 
 /**
  @route /api/user/delete
  @desc Delete current user
  */
-userRouter.post('/delete', passportJWT, deleteCurrentUser);
+userRouter.post("/delete", passportJWT, deleteCurrentUser);
 
 export default userRouter;

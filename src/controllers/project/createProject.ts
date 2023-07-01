@@ -24,7 +24,7 @@ const createProjectSchema = z.object({
 
 /**
  * @route POST /api/projects
- * @desc Create a new project
+ * @type RequestHandler
  */
 
 // Function to validate request using zod schema
