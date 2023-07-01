@@ -5,8 +5,6 @@ import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest";
 import { hashPassword } from "../../utils/password";
 import { z } from "zod";
-import nodemailer from "nodemailer";
-import crypto from "crypto";
 
 // Zod schema to validate request
 const resetPasswordSchema = z.object({
