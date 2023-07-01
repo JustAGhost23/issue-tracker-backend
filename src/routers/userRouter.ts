@@ -4,6 +4,10 @@ import {
   editCurrentUserValidator,
   editCurrentUser,
 } from "../controllers/user/editCurrentUser";
+import {
+  getUserByUsernameValidator,
+  getUserByUsername,
+} from "../controllers/user/getUserByUsername";
 import passport from "../middlewares/passportAuth";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
@@ -21,5 +25,11 @@ userRouter.get('/', passportJWT, getAllUsersValidator, getAllUsers);
  @desc Edit current user details
  */
 userRouter.post('/edit', passportJWT, editCurrentUserValidator, editCurrentUser);
+
+/**
+ @route /api/user/:username
+ @desc Get user by username
+ */
+userRouter.get('/:username', passportJWT, getUserByUsernameValidator, getUserByUsername);
 
 export default userRouter;
