@@ -30,13 +30,15 @@ model User {
 model Project {
   id                Int               @default(autoincrement()) @id
   name              String            @unique
-  description       String?
+  description       String?           @default("")
   createdBy         User              @relation("ProjectsOwned", fields: [createdById], references: [id], onDelete: Cascade)
   createdById       Int
   members           User[]
   tickets           Ticket[]          @relation("ProjectTickets")
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+
+  @@unique([name, createdById], name: "projectName")
 }
 
 model Ticket {
