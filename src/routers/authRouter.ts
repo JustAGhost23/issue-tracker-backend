@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { registerValidator, register } from "../controllers/auth/register";
 import { loginValidator, login } from "../controllers/auth/login";
+import { logout } from "../controllers/auth/logout";
 import passport from "../middlewares/passportAuth";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
@@ -21,5 +22,11 @@ authRouter.post('/register', registerValidator, register);
  @desc Login using username/password
  */
 authRouter.post('/login', loginValidator, login);
+
+/**
+ @route /api/auth/logout
+ @desc Logout
+ */
+authRouter.post('/logout', passportJWT, logout);
 
 export default authRouter;
