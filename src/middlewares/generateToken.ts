@@ -13,12 +13,12 @@ export default function generateUserToken(req: Request, res: Response) {
       email: user.email,
     },
     process.env.TOKEN_SECRET!,
-    { expiresIn: "1d" }
+    { expiresIn: "12h" }
   );
 
   // Sending cookie with the token
   res
     .status(200)
-    .cookie("jwt", token, { maxAge: 24 * 3600000, httpOnly: true })
+    .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
     .send(`Logged in successfully with token ${token}`);
 }
