@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { registerValidator, register } from "../controllers/auth/register";
 import { loginValidator, login } from "../controllers/auth/login";
+import passport from "../middlewares/passportAuth";
+
+const passportJWT = passport.authenticate("jwt", { session: false });
+const passportGoogle = passport.authenticate("google", {
+  session: false,
+});
 
 const authRouter: Router = Router();
 
