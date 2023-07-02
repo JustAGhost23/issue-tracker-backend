@@ -33,6 +33,20 @@ export const getUserByUsername = async (req: Request, res: Response) => {
       where: {
         username: req.params.username,
       },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        provider: true,
+        projectsOwned: true,
+        projects: true,
+        ticketsCreated: true,
+        ticketsAssigned: true,
+        comments: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     if (!user) {
       return res
@@ -43,11 +57,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
     // Send user details
     res.status(200).send({
       data: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        name: user.name,
-        provider: user.provider,
+        user,
       },
     });
   } catch (err) {

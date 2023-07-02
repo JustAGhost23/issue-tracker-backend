@@ -62,9 +62,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
           },
         },
         select: {
-          email: true,
+          id: true,
           username: true,
           name: true,
+          email: true,
+          provider: true,
+          projectsOwned: true,
+          projects: true,
+          ticketsCreated: true,
+          ticketsAssigned: true,
+          comments: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
 

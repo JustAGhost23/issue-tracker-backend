@@ -61,10 +61,12 @@ export const getAllProjects = async (req: Request, res: Response) => {
           },
         },
         select: {
+          id: true,
           name: true,
           description: true,
           createdBy: true,
           members: true,
+          tickets: true,
           createdAt: true
         },
       });
