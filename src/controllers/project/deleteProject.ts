@@ -68,7 +68,7 @@ export const deleteProject = async (req: Request, res: Response) => {
       },
     });
     if (!user) {
-      return res.status(404).send({ error: "User does not exist" });
+      return res.status(404).send({ error: "User not found" });
     }
 
     // Check if project exists
@@ -78,7 +78,7 @@ export const deleteProject = async (req: Request, res: Response) => {
       },
     });
     if (!project) {
-      return res.status(404).send({ error: "Project does not exist" });
+      return res.status(404).send({ error: "Project not found" });
     }
 
     // Delete project from database

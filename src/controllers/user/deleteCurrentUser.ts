@@ -25,6 +25,8 @@ export const deleteCurrentUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
+
+
     // Delete user from database
     const deletedUser = await prisma.user.delete({
       where: {
