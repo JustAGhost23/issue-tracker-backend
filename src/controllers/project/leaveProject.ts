@@ -83,16 +83,21 @@ export const leaveProject = async (req: Request, res: Response) => {
         projectName: { name: req.params.name, createdById: projectOwner.id },
       },
       select: {
-        members: true,
+        id: true,
+        members: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
     }
 
-    // Check if user is in the project
-    if (!project.members.includes(user)) {
-      return res.status(400).send({ error: "User not in project" });
+    // Check if user is a member of the project
+    if (user.id in project.members) {
+      res.status(400).send({ error: "User is not a member of the project" });
     }
 
     // Check if user to be removed is project owner

@@ -90,6 +90,14 @@ export const removeUser = async (req: Request, res: Response) => {
       where: {
         projectName: { name: req.params.name, createdById: reqUser.id },
       },
+      select: {
+        id: true,
+        members: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
@@ -106,6 +114,11 @@ export const removeUser = async (req: Request, res: Response) => {
         error:
           "Cannot remove project owner, please transfer ownership or delete project",
       });
+    }
+
+    // Check if user is a member of the project
+    if (user.id in project.members) {
+      res.status(400).send({ error: "User is not a member of the project" });
     }
 
     // Update project

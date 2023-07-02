@@ -67,7 +67,11 @@ export const createTicket = async (req: Request, res: Response) => {
       },
       select: {
         id: true,
-        members: true,
+        members: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
     if (!project) {
@@ -75,7 +79,7 @@ export const createTicket = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member of the project
-    if (!project.members.includes(user)) {
+    if (user.id in project.members) {
       res.status(400).send({ error: "User is not a member of the project" });
     }
 

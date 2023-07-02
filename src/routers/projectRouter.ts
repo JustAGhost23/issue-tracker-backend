@@ -62,7 +62,7 @@ projectRouter.get(
  * @desc  Transfer ownership of project
  */
 projectRouter.post(
-  "/:username/:name",
+  "/:username/:name/transfer",
   passportJWT,
   transferOwnershipValidator,
   transferOwnership

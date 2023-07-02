@@ -108,14 +108,16 @@ export const transferOwnership = async (req: Request, res: Response) => {
         projectName: { name: req.params.name, createdById: reqUser.id },
       },
       data: {
-        members: {
+        createdBy: {
           connect: {
             id: newProjectOwner.id,
           },
-          disconnect: {
-            id: user.id,
-          },
         },
+        members: {
+          connect: {
+            id: newProjectOwner.id,
+          }
+        }
       },
       select: {
         id: true,
