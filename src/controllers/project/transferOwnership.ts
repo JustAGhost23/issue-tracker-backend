@@ -5,7 +5,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const removeUserSchema = z.object({
+const transferOwnershipSchema = z.object({
   params: z.object({
     username: z
       .string({
@@ -50,14 +50,16 @@ const removeUserSchema = z.object({
 });
 
 /**
- * @route POST /api/project/:username/:name/remove-user
+ * @route POST /api/project/:username/:name/transfer
  * @type RequestHandler
  */
 
 // Function to validate request using zod schema
-export const removeUserValidator: RequestHandler = validate(removeUserSchema);
+export const transferOwnershipValidator: RequestHandler = validate(
+  transferOwnershipSchema
+);
 
-export const removeUser = async (req: Request, res: Response) => {
+export const transferOwnership = async (req: Request, res: Response) => {
   try {
     // Check if user is valid
     const reqUser = req.user as User;
@@ -75,14 +77,14 @@ export const removeUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-    // Check if user to be removed exists
-    const removedUser = await prisma.user.findFirst({
+    // Check if user to be made owner exists
+    const newProjectOwner = await prisma.user.findFirst({
       where: {
         username: req.body.username,
       },
     });
-    if (!removedUser) {
-      return res.status(404).send({ error: "User to be removed not found" });
+    if (!newProjectOwner) {
+      return res.status(404).send({ error: "User to be made owner not found" });
     }
 
     // Check if project exists
@@ -100,14 +102,6 @@ export const removeUser = async (req: Request, res: Response) => {
       return res.status(403).send({ error: "User does not own this project" });
     }
 
-    // Check if user to be removed is project owner
-    if (user.id == removedUser.id) {
-      return res.status(400).send({
-        error:
-          "Cannot remove project owner, please transfer ownership or delete project",
-      });
-    }
-
     // Update project
     const newProject = await prisma.project.update({
       where: {
@@ -115,8 +109,11 @@ export const removeUser = async (req: Request, res: Response) => {
       },
       data: {
         members: {
+          connect: {
+            id: newProjectOwner.id,
+          },
           disconnect: {
-            id: removedUser.id,
+            id: user.id,
           },
         },
       },
@@ -151,17 +148,17 @@ export const removeUser = async (req: Request, res: Response) => {
       },
     });
 
-    // Removed user successfully
+    // Transferred ownership successfully
     res.status(200).send({
       data: {
         newProject,
       },
-      message: "Removed user successfully",
+      message: "Transferred ownership successfully",
     });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while removing user from project",
+      error: "Something went wrong while transferring ownership of project",
     });
   }
 };

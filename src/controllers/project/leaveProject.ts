@@ -156,7 +156,7 @@ export const leaveProject = async (req: Request, res: Response) => {
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while adding user to project",
+      error: "Something went wrong while leaving project",
     });
   }
 };
