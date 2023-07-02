@@ -119,12 +119,46 @@ export const createProject = async (req: Request, res: Response) => {
       return;
     }
 
+    const newProject = await prisma.project.findUnique({
+      where: {
+        projectName: { name: req.body.name, createdById: reqUser.id },
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            email: true,
+            provider: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        members: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            email: true,
+            provider: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        tickets: true,
+        createdAt: true,
+      },
+    });
+
     // Project created successfully
     return res.status(200).send({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      createdBy: reqUser.username,
+      data: {
+        newProject,
+      },
       message: "Project created successfully",
     });
   } catch (err) {

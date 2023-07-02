@@ -88,6 +88,32 @@ export const editCurrentUser = async (req: Request, res: Response) => {
         id: user.id,
       },
       data: user,
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        provider: true,
+        projectsOwned: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        ticketsCreated: true,
+        ticketsAssigned: true,
+        comments: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     if (!newUser) {
       return res.status(500).send({ error: "Error while adding new user" });
@@ -111,11 +137,7 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
       .send({
         data: {
-          id: newUser.id,
-          email: newUser.email,
-          username: newUser.username,
-          name: newUser.name,
-          provider: newUser.provider,
+          newUser
         },
         message: "Edited user and updated JWT successfully",
       });

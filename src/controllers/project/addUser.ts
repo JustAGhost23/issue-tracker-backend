@@ -1,10 +1,11 @@
-import { RequestHandler, Request, Response } from "express";
+import { User } from "@prisma/client";
+import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getProjectByNameSchema = z.object({
+const addUserSchema = z.object({
   params: z.object({
     username: z
       .string({
@@ -37,36 +38,77 @@ const getProjectByNameSchema = z.object({
         })
       ),
   }),
+  body: z.object({
+    username: z
+      .string({
+        invalid_type_error: "Username is not a string",
+        required_error: "Username is required",
+      })
+      .min(8, { message: "Must be at least 8 characters long" })
+      .max(20, { message: "Must be at most 20 characters long" }),
+  }),
 });
 
 /**
- @route GET /api/project/:username/:name
- @desc Request Handler
+ * @route POST /api/projects/:username/:name/add-user
+ * @type RequestHandler
  */
 
 // Function to validate request using zod schema
-export const getProjectByNameValidator: RequestHandler = validate(
-  getProjectByNameSchema
-);
+export const addUserValidator: RequestHandler = validate(addUserSchema);
 
-export const getProjectByName = async (req: Request, res: Response) => {
+export const addUser = async (req: Request, res: Response) => {
   try {
-    // Check if an account exists with given username
+    // Check if user is valid
+    const reqUser = req.user as User;
+    if (!reqUser) {
+      return res.status(400).send({ error: "Invalid user sent in request" });
+    }
+
+    // Check if user exists
     const user = await prisma.user.findUnique({
       where: {
-        username: req.params.username,
+        id: reqUser.id,
       },
     });
     if (!user) {
-      return res
-        .status(404)
-        .send({ error: "No user with username provided found!" });
+      return res.status(404).send({ error: "User not found" });
     }
 
-    // Check if project with given name exists
+    const addedUser = await prisma.user.findFirst({
+      where: {
+        username: req.body.username,
+      },
+    });
+    if (!addedUser) {
+      return res.status(404).send({ error: "User to be added not found" });
+    }
+
+    // Check if project exists
     const project = await prisma.project.findUnique({
       where: {
-        projectName: { name: req.params.name, createdById: user.id },
+        projectName: { name: req.params.name, createdById: reqUser.id },
+      },
+    });
+    if (!project) {
+      return res.status(404).send({ error: "Project not found" });
+    }
+
+    // Check if user owns project
+    if (reqUser.username != req.params.username) {
+      return res.status(403).send({ error: "User does not own this project" });
+    }
+
+    const newProject = await prisma.project.update({
+      where: {
+        projectName: { name: req.params.name, createdById: reqUser.id },
+      },
+      data: {
+        members: {
+          connect: {
+            id: addedUser.id,
+          },
+        },
       },
       select: {
         id: true,
@@ -98,22 +140,18 @@ export const getProjectByName = async (req: Request, res: Response) => {
         createdAt: true,
       },
     });
-    if (!project) {
-      return res
-        .status(404)
-        .send({ error: "No project with name provided found!" });
-    }
 
-    // Send project details
+    // Added user successfully
     res.status(200).send({
       data: {
-        project,
+        newProject,
       },
+      message: "Added user successfully",
     });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting project by name",
+      error: "Something went wrong while adding user to project",
     });
   }
 };

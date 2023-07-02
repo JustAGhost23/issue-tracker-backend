@@ -1,4 +1,4 @@
-import { Project, User } from "@prisma/client";
+import { User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -57,10 +57,6 @@ export const deleteProject = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid user sent in request" });
     }
 
-    if (reqUser.username != req.params.username) {
-      return res.status(403).send({ error: "User does not own this project" });
-    }
-
     // Check if user exists
     const user = await prisma.user.findFirst({
       where: {
@@ -79,6 +75,11 @@ export const deleteProject = async (req: Request, res: Response) => {
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
+    }
+
+    // Check if user owns project
+    if (reqUser.username != req.params.username) {
+      return res.status(403).send({ error: "User does not own this project" });
     }
 
     // Delete project from database

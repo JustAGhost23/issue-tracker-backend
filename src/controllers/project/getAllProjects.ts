@@ -64,10 +64,30 @@ export const getAllProjects = async (req: Request, res: Response) => {
           id: true,
           name: true,
           description: true,
-          createdBy: true,
-          members: true,
+          createdBy: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+              provider: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          members: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+              provider: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
           tickets: true,
-          createdAt: true
+          createdAt: true,
         },
       });
 
