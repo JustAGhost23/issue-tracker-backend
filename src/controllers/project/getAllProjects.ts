@@ -4,7 +4,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getAllUsersSchema = z.object({
+const getAllProjectsSchema = z.object({
   query: z.object({
     items: z
       .string({
@@ -27,14 +27,14 @@ const getAllUsersSchema = z.object({
 });
 
 /**
- @route GET /api/user/
+ @route GET /api/project/
  @desc Request Handler
  */
 
 // Function to validate request using zod schema
-export const getAllUsersValidator: RequestHandler = validate(getAllUsersSchema);
+export const getAllProjectsValidator: RequestHandler = validate(getAllProjectsSchema);
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllProjects = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
     // Figure out how to implement fuzzy search properly.
@@ -42,7 +42,6 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const page = parseInt((req.query.page as string) ?? "1") - 1;
     const contains = (req.query.contains as string) ?? "";
 
-    // Add checks for page number and items
     if (page < 0) {
       return res.status(400).send({ error: "Invalid page number provided" });
     }
@@ -50,9 +49,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
-    // Get list of users
+    // Get list of projects
     try {
-      const users = await prisma.user.findMany({
+      const projects = await prisma.project.findMany({
         skip: maxItems * page,
         take: maxItems,
         where: {
@@ -62,14 +61,16 @@ export const getAllUsers = async (req: Request, res: Response) => {
           },
         },
         select: {
-          email: true,
-          username: true,
           name: true,
+          description: true,
+          createdBy: true,
+          members: true,
+          createdAt: true
         },
       });
 
-      // Get total count of list of users
-      const totalCount = await prisma.user.count({
+      // Get total count of list of projects
+      const totalCount = await prisma.project.count({
         where: {
           name: {
             contains: contains,
@@ -78,25 +79,25 @@ export const getAllUsers = async (req: Request, res: Response) => {
         },
       });
 
-      if (!users) {
-        return res.status(404).send({ error: "No users found!" });
+      if (!projects) {
+        return res.status(404).send({ error: "No projects found!" });
       }
 
-      // Send list of users
+      // Send list of projects
       res.status(200).send({
         totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: users,
+        data: projects,
       });
     } catch (err) {
       console.log(err);
       res.status(500).send({
-        error: "Something went wrong while getting users",
+        error: "Something went wrong while getting projects",
       });
     }
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting users",
+      error: "Something went wrong while getting projects",
     });
   }
 };
