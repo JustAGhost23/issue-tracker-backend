@@ -5,7 +5,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const editTicketSchema = z.object({
+const assignTicketSchema = z.object({
   params: z.object({
     ticketId: z.coerce
       .number({
@@ -31,24 +31,30 @@ const editTicketSchema = z.object({
       .int({
         message: "invalid id",
       }),
-    description: z
-      .string({
-        invalid_type_error: "Description must be of type string",
+    ids: z.coerce
+      .number({
+        invalid_type_error: "ids not a number",
+        required_error: "ids is a required path parameter",
       })
-      .optional(),
-    priority: z.nativeEnum(Priority),
-    status: z.nativeEnum(Status),
+      .positive({
+        message: "invalid id",
+      })
+      .int({
+        message: "invalid id",
+      })
+      .array(),
   }),
 });
 
 /**
- * @route POST /api/ticket/:ticketId/edit
+ * @route POST /api/ticket/:ticketId/assign
  * @type RequestHandler
  */
 
-export const editTicketValidator: RequestHandler = validate(editTicketSchema);
+export const assignTicketValidator: RequestHandler =
+  validate(assignTicketSchema);
 
-export const editTicket = async (req: Request, res: Response) => {
+export const assignTicket = async (req: Request, res: Response) => {
   try {
     // Check if user is valid
     const reqUser = req.user as User;
@@ -93,46 +99,58 @@ export const editTicket = async (req: Request, res: Response) => {
       where: {
         id: parseInt(req.params.ticketId),
       },
+      select: {
+        id: true,
+        assignees: {
+          select: {
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!ticket) {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    // Edit ticket
-    let newTicket: Ticket | null;
-    if (!req.body.description) {
-      newTicket = await prisma.ticket.update({
-        where: {
-          id: ticket.id,
+    const assignedUserIds = req.body.ids;
+
+    const assignedUserIdsToAssign: number[] = assignedUserIds.filter(
+      (userId: number) =>
+        !ticket?.assignees.some(
+          (assignedUser) => assignedUser.user.id === userId
+        )
+    );
+
+    // Assign users to ticket
+    const updateTicket = await prisma.ticket.update({
+      where: {
+        id: parseInt(req.params.id),
+      },
+      data: {
+        assignees: {
+          create: assignedUserIdsToAssign.map((id) => ({
+            user: {
+              connect: {
+                id,
+              },
+            },
+          })),
         },
-        data: {
-          name: req.body.name,
-          priority: req.body.priority,
-          status: req.body.status,
-        },
-      });
-    } else {
-      newTicket = await prisma.ticket.update({
-        where: {
-          id: ticket.id,
-        },
-        data: {
-          name: req.body.name,
-          description: req.body.description,
-          priority: req.body.priority,
-          status: req.body.status,
-        },
-      });
-    }
-    if (!newTicket) {
+      },
+    });
+    if (!updateTicket) {
       return res
         .status(500)
-        .send({ error: "Something went wrong while creating new ticket" });
+        .send({ error: "Something went wrong while assigning users" });
     }
 
-    const outTicket = await prisma.ticket.findUnique({
+    const newTicket = await prisma.ticket.findUnique({
       where: {
-        id: newTicket.id,
+        id: updateTicket.id,
       },
       select: {
         name: true,
@@ -161,17 +179,17 @@ export const editTicket = async (req: Request, res: Response) => {
       },
     });
 
-    // Ticket edited successfully
+    // Ticket assigned successfully
     return res.status(200).send({
       data: {
-        outTicket,
+        newTicket,
       },
-      message: "Ticket edited successfully",
+      message: "Ticket assigned to assignees successfully",
     });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while editing ticket",
+      error: "Something went wrong while assigning ticket",
     });
   }
 };
