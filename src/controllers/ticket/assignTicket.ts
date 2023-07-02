@@ -9,27 +9,27 @@ const assignTicketSchema = z.object({
   params: z.object({
     ticketId: z.coerce
       .number({
-        invalid_type_error: "id not a number",
-        required_error: "id is a required path parameter",
+        invalid_type_error: "ticketId not a number",
+        required_error: "ticketId is a required path parameter",
       })
       .positive({
-        message: "invalid id",
+        message: "invalid ticketId",
       })
       .int({
-        message: "invalid id",
+        message: "invalid ticketId",
       }),
   }),
   body: z.object({
-    id: z.coerce
+    projectId: z.coerce
       .number({
-        invalid_type_error: "id not a number",
-        required_error: "id is a required path parameter",
+        invalid_type_error: "projectId not a number",
+        required_error: "projectId is a required path parameter",
       })
       .positive({
-        message: "invalid id",
+        message: "invalid projectId",
       })
       .int({
-        message: "invalid id",
+        message: "invalid projectId",
       }),
     userIds: z.coerce
       .number({
@@ -74,7 +74,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     // Check if project exists
     const project = await prisma.project.findFirst({
       where: {
-        id: req.body.id,
+        id: req.body.projectId,
       },
       select: {
         id: true,
@@ -90,8 +90,17 @@ export const assignTicket = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member of the project
-    if (user.id in project.members) {
-      res.status(400).send({ error: "User is not a member of the project" });
+    if (
+      !project.members.some((element) => {
+        if (element.id == user.id) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return res
+        .status(400)
+        .send({ error: "User is not a member of the project" });
     }
 
     // Check if ticket exists

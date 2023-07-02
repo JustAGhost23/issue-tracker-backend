@@ -79,8 +79,17 @@ export const createTicket = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member of the project
-    if (user.id in project.members) {
-      res.status(400).send({ error: "User is not a member of the project" });
+    if (
+      !project.members.some((element) => {
+        if (element.id == user.id) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return res
+        .status(400)
+        .send({ error: "User is not a member of the project" });
     }
 
     // Get number of existing tickets in the project
