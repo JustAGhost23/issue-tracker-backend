@@ -25,7 +25,20 @@ export const deleteCurrentUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-
+    // Check if the user owns projects
+    const projects = await prisma.project.findFirst({
+      where: {
+        createdById: reqUser.id,
+      },
+    });
+    if (projects) {
+      return res
+        .status(409)
+        .send({
+          error:
+            "This user owns projects, please delete them or transfer ownership",
+        });
+    }
 
     // Delete user from database
     const deletedUser = await prisma.user.delete({
