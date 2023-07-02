@@ -39,7 +39,7 @@ const createProjectSchema = z.object({
 });
 
 /**
- * @route POST /api/projects/
+ * @route POST /api/project/
  * @type RequestHandler
  */
 

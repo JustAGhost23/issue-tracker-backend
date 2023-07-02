@@ -50,7 +50,7 @@ const removeUserSchema = z.object({
 });
 
 /**
- * @route POST /api/projects/:username/:name/remove-user
+ * @route POST /api/project/:username/:name/remove-user
  * @type RequestHandler
  */
 

@@ -46,8 +46,8 @@ projectRouter.get(
 );
 
 /**
- * @route /api/projects/:username/:name/add-user
- * @type Add user to project
+ * @route /api/project/:username/:name/add-user
+ * @desc Add user to project
  */
 projectRouter.post(
   "/:username/:name/add-user",
@@ -55,6 +55,11 @@ projectRouter.post(
   addUserValidator,
   addUser
 );
+
+/**
+ * @route /api/projects/:username/:name/remove-user
+ * @desc  Remove user from project
+ */
 
 /**
  @route /api/project/:username/:name/delete

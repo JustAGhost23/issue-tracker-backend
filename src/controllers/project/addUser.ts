@@ -50,7 +50,7 @@ const addUserSchema = z.object({
 });
 
 /**
- * @route POST /api/projects/:username/:name/add-user
+ * @route POST /api/project/:username/:name/add-user
  * @type RequestHandler
  */
 
