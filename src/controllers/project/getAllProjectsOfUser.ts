@@ -4,7 +4,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getAllTicketsOfUserSchema = z.object({
+const getAllProjectsOfUserSchema = z.object({
   params: z.object({
     username: z
       .string({
@@ -36,16 +36,16 @@ const getAllTicketsOfUserSchema = z.object({
 });
 
 /**
- @route GET /api/ticket/:username
- @desc Request Handler
+ @route GET /api/project/:username
+ @type Request Handler
  */
 
 // Function to validate request using zod schema
-export const getAllTicketsOfUserValidator: RequestHandler = validate(
-  getAllTicketsOfUserSchema
+export const getAllProjectsOfUserValidator: RequestHandler = validate(
+  getAllProjectsOfUserSchema
 );
 
-export const getAllTicketsOfUser = async (req: Request, res: Response) => {
+export const getAllProjectsOfUser = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
     // Figure out how to implement fuzzy search properly.
@@ -61,9 +61,9 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
-    // Get list of tickets
+    // Get list of projects
     try {
-      const tickets = await prisma.ticket.findMany({
+      const projects = await prisma.project.findMany({
         skip: maxItems * page,
         take: maxItems,
         where: {
@@ -71,25 +71,17 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
             contains: keyword,
             mode: "insensitive",
           },
-          assignees: {
+          members: {
             some: {
-              username: req.params.username
-            }
-          }
-        },
-        select: {
-          name: true,
-          description: true,
-          priority: true,
-          status: true,
-          project: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
+              username: req.params.username,
             },
           },
-          reportedBy: {
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdBy: {
             select: {
               id: true,
               username: true,
@@ -100,18 +92,30 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
               updatedAt: true,
             },
           },
-          number: true,
+          members: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+              provider: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          tickets: true,
+          createdAt: true,
         },
       });
 
-      // Get total count of list of tickets
-      const totalCount = await prisma.ticket.count({
+      // Get total count of list of projects
+      const totalCount = await prisma.project.count({
         where: {
           name: {
             contains: keyword,
             mode: "insensitive",
           },
-          assignees: {
+          members: {
             some: {
               username: req.params.username,
             },
@@ -119,19 +123,19 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
         },
       });
 
-      if (!tickets) {
-        return res.status(404).send({ error: "No tickets found!" });
+      if (!projects) {
+        return res.status(404).send({ error: "No projects found!" });
       }
 
-      // Send list of tickets
+      // Send list of projects
       res.status(200).send({
         totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: tickets,
+        data: projects,
       });
     } catch (err) {
       console.log(err);
       res.status(500).send({
-        error: "Something went wrong while getting tickets",
+        error: "Something went wrong while getting projects",
       });
     }
   } catch (err) {
