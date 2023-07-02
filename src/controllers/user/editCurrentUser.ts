@@ -73,11 +73,9 @@ export const editCurrentUser = async (req: Request, res: Response) => {
             },
           });
           if (foundUser) {
-            return res
-              .status(409)
-              .send({
-                error: "Another account with this username already exists",
-              });
+            return res.status(409).send({
+              error: "Another account with this username already exists",
+            });
           }
         }
       }
@@ -120,8 +118,20 @@ export const editCurrentUser = async (req: Request, res: Response) => {
             description: true,
           },
         },
-        ticketsCreated: true,
-        ticketsAssigned: true,
+        ticketsCreated: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        ticketsAssigned: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
         comments: true,
         createdAt: true,
         updatedAt: true,
