@@ -5,7 +5,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const assignTicketSchema = z.object({
+const unassignTicketSchema = z.object({
   params: z.object({
     ticketId: z.coerce
       .number({
@@ -31,7 +31,7 @@ const assignTicketSchema = z.object({
       .int({
         message: "invalid id",
       }),
-    userIds: z.coerce
+    userId: z.coerce
       .number({
         invalid_type_error: "userIds not a number",
         required_error: "userIds is a required path parameter",
@@ -41,20 +41,19 @@ const assignTicketSchema = z.object({
       })
       .int({
         message: "invalid userId",
-      })
-      .array(),
+      }),
   }),
 });
 
 /**
- * @route POST /api/ticket/:ticketId/assign
+ * @route POST /api/ticket/:ticketId/unassign
  * @type RequestHandler
  */
 
-export const assignTicketValidator: RequestHandler =
-  validate(assignTicketSchema);
+export const unassignTicketValidator: RequestHandler =
+  validate(unassignTicketSchema);
 
-export const assignTicket = async (req: Request, res: Response) => {
+export const unassignTicket = async (req: Request, res: Response) => {
   try {
     // Check if user is valid
     const reqUser = req.user as User;
@@ -69,6 +68,16 @@ export const assignTicket = async (req: Request, res: Response) => {
     });
     if (!user) {
       return res.status(404).send({ error: "User not found" });
+    }
+
+    // Check if user to be unassigned exists
+    const unassignedUser = await prisma.user.findFirst({
+      where: {
+        id: parseInt(req.body.userId),
+      },
+    });
+    if (!unassignedUser) {
+      return res.status(404).send({ error: "User to be unassigned not found" });
     }
 
     // Check if project exists
@@ -112,29 +121,30 @@ export const assignTicket = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    const assignedUserIds = req.body.userIds;
+    // Check if the user has been assigned this ticket
+    if (!(unassignedUser.id in ticket.assignees)) {
+      return res
+        .status(400)
+        .send({ error: "User has not been assigned this ticket" });
+    }
 
-    const assignedUserIdsToAssign: number[] = assignedUserIds.filter(
-      (userId: number) =>
-        !ticket?.assignees.some((assignedUser) => assignedUser.id === userId)
-    );
-
-    // Assign users to ticket
+    // Unassign user from ticket
     const updateTicket = await prisma.ticket.update({
       where: {
-        id: parseInt(req.params.ticketId),
+        id: ticket.id,
       },
       data: {
         assignees: {
-          connect:
-            assignedUserIdsToAssign.map((userId) => ({ id: userId })) || [],
+          disconnect: {
+            id: unassignedUser.id,
+          },
         },
       },
     });
     if (!updateTicket) {
       return res
         .status(500)
-        .send({ error: "Something went wrong while assigning users" });
+        .send({ error: "Something went wrong while unassigning user" });
     }
 
     const newTicket = await prisma.ticket.findUnique({
@@ -168,17 +178,17 @@ export const assignTicket = async (req: Request, res: Response) => {
       },
     });
 
-    // Ticket assigned successfully
+    // Ticket unassigned successfully
     return res.status(200).send({
       data: {
         newTicket,
       },
-      message: "Ticket assigned to assignees successfully",
+      message: "Ticket unassigned successfully",
     });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while assigning ticket",
+      error: "Something went wrong while unassigning ticket",
     });
   }
 };

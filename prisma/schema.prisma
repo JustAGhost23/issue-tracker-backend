@@ -21,7 +21,7 @@ model User {
   projectsOwned     Project[]         @relation("ProjectsOwned")
   projects          Project[]
   ticketsCreated    Ticket[]          @relation("TicketsCreated")
-  ticketsAssigned   TicketsOnUser[]     
+  ticketsAssigned   Ticket[]     
   comments          Comment[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -52,24 +52,12 @@ model Ticket {
   projectId         Int
   priority          Priority
   status            Status
-  assignees         TicketsOnUser[]
+  assignees         User[]
   comments          Comment[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   @@unique([name, projectId])
-}
-
-model TicketsOnUser {
-  id                Int               @default(autoincrement()) @id
-  user              User              @relation(fields: [userId], references: [id])
-  userId            Int
-  ticket            Ticket            @relation(fields: [issueId], references: [id])
-  issueId           Int
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  @@unique([userId, issueId])
 }
 
 model Comment {
