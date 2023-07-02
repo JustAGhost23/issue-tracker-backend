@@ -126,10 +126,17 @@ export const removeUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user is a member of the project
-    // if (user.id in project.members) {
-    //   res.status(400).send({ error: "User is not a member of the project" });
-    // }
+    // Check if user to be removed is a member of the project
+    if (
+      !project.members.some((element) => {
+        if (element.id == removedUser.id) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return res.status(400).send({ error: "User is not a member of the project" });
+    }
 
     // Update project
     const newProject = await prisma.project.update({

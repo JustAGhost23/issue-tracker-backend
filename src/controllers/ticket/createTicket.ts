@@ -7,16 +7,16 @@ import { z } from "zod";
 // Zod schema to validate request
 const createTicketSchema = z.object({
   body: z.object({
-    id: z.coerce
+    projectId: z.coerce
       .number({
-        invalid_type_error: "id not a number",
-        required_error: "id is a required path parameter",
+        invalid_type_error: "projectId not a number",
+        required_error: "projectId is a required path parameter",
       })
       .positive({
-        message: "invalid id",
+        message: "invalid projectId",
       })
       .int({
-        message: "invalid id",
+        message: "invalid projectId",
       }),
     name: z
       .string({
@@ -63,7 +63,7 @@ export const createTicket = async (req: Request, res: Response) => {
     // Check if project exists
     const project = await prisma.project.findFirst({
       where: {
-        id: req.body.id,
+        id: req.body.projectId,
       },
       select: {
         id: true,

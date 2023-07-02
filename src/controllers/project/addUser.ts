@@ -85,6 +85,7 @@ export const addUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Project owner not found" });
     }
 
+    // Check if user to be added exists
     const addedUser = await prisma.user.findFirst({
       where: {
         username: req.body.username,
@@ -99,6 +100,14 @@ export const addUser = async (req: Request, res: Response) => {
       where: {
         projectName: { name: req.params.name, createdById: projectOwner.id },
       },
+      select: {
+        id: true,
+        members: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
@@ -107,6 +116,20 @@ export const addUser = async (req: Request, res: Response) => {
     // Check if user owns project
     if (reqUser.username != req.params.username) {
       return res.status(403).send({ error: "User does not own this project" });
+    }
+
+    // Check if user to be added is already in the project
+    if (
+      project.members.some((element) => {
+        if (element.id == addedUser.id) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return res
+        .status(400)
+        .send({ error: "User is already a member of the project" });
     }
 
     const newProject = await prisma.project.update({
