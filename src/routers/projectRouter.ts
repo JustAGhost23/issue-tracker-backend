@@ -8,22 +8,32 @@ import {
   deleteProject,
   deleteProjectValidator,
 } from "../controllers/project/deleteProject.js";
+import {
+  getAllProjects,
+  getAllProjectsValidator,
+} from "../controllers/project/getAllProjects.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
 const projectRouter: Router = Router();
 
+
 /**
  @route /api/project/
- @desc Create new project
+ @desc  Get all projects
+ */
+projectRouter.get("/", passportJWT, getAllProjectsValidator, getAllProjects);
+
+/**
+ @route /api/project/
+ @desc  Create new project
  */
 projectRouter.post("/", passportJWT, createProjectValidator, createProject);
 
 /**
- @route POST /api/project/:username/:name/delete
- @desc Delete project
+ @route /api/project/:username/:name/delete
+ @desc  Delete project
  */
-
 projectRouter.post(
   "/:username/:name/delete",
   passportJWT,
