@@ -16,6 +16,10 @@ import {
   unassignTicket,
   unassignTicketValidator,
 } from "../controllers/ticket/unassignTicket.js";
+import {
+  getTicketById,
+  getTicketByIdValidator,
+} from "../controllers/ticket/getTicketById.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -58,6 +62,17 @@ ticketRouter.post(
   passportJWT,
   unassignTicketValidator,
   unassignTicket
+);
+
+/**
+ @route GET /api/ticket/:ticketId
+ @desc  Get ticket by id
+ */
+ticketRouter.get(
+  "/:ticketId",
+  passportJWT,
+  getTicketByIdValidator,
+  getTicketById
 );
 
 export default ticketRouter;
