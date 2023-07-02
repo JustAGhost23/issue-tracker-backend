@@ -2,17 +2,17 @@ import { Router } from "express";
 import {
   getAllUsersValidator,
   getAllUsers,
-} from "../controllers/user/getAllUsers";
+} from "../controllers/user/getAllUsers.js";
 import {
   editCurrentUserValidator,
   editCurrentUser,
-} from "../controllers/user/editCurrentUser";
+} from "../controllers/user/editCurrentUser.js";
 import {
   getUserByUsernameValidator,
   getUserByUsername,
-} from "../controllers/user/getUserByUsername";
-import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser";
-import passport from "../middlewares/passportAuth";
+} from "../controllers/user/getUserByUsername.js";
+import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser.js";
+import passport from "../middlewares/passportAuth.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 

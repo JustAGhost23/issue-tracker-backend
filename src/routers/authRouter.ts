@@ -1,21 +1,21 @@
 import { Router } from "express";
-import { registerValidator, register } from "../controllers/auth/register";
-import { loginValidator, login } from "../controllers/auth/login";
-import { logout } from "../controllers/auth/logout";
+import { registerValidator, register } from "../controllers/auth/register.js";
+import { loginValidator, login } from "../controllers/auth/login.js";
+import { logout } from "../controllers/auth/logout.js";
 import {
   verifyEmailValidator,
   verifyEmail,
-} from "../controllers/auth/verifyEmail";
+} from "../controllers/auth/verifyEmail.js";
 import {
   forgotPasswordValidator,
   forgotPassword,
-} from "../controllers/auth/forgotPassword";
+} from "../controllers/auth/forgotPassword.js";
 import {
   resetPassword,
   resetPasswordValidator,
-} from "../controllers/auth/resetPassword";
-import generateUserToken from "../middlewares/generateToken";
-import passport from "../middlewares/passportAuth";
+} from "../controllers/auth/resetPassword.js";
+import generateUserToken from "../middlewares/generateToken.js";
+import passport from "../middlewares/passportAuth.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 const passportGoogle = passport.authenticate("google", {

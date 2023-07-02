@@ -1,6 +1,6 @@
 import { RequestHandler, Request, Response } from "express";
-import { prisma } from "../../config/db";
-import { validate } from "../../utils/zodValidateRequest";
+import { prisma } from "../../config/db.js";
+import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request

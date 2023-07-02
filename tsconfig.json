@@ -1,18 +1,17 @@
 {
-   "compilerOptions": {
-      "lib": [
-         "es5",
-         "es6"
-      ],
-      "target": "es5",
-      "module": "commonjs",
-      "moduleResolution": "node",
-      "outDir": "./build",
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "target": "ES2020",
+        "sourceMap": true,
+        "rootDir": "./src",
+        "outDir": "./build",
+        "strict": true,
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,
       "resolveJsonModule": true,
       "esModuleInterop": true,
-      "sourceMap": true,
-      "strict": true
-   }
+    },
+    "exclude":["./node_modules"],
+    "include": ["src/**/*"],
 }

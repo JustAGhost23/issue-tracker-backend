@@ -1,7 +1,7 @@
-import { Token } from "../../utils/enums";
-import { prisma, redisClient } from "../../config/db";
+import { Token } from "../../utils/enums.js";
+import { prisma, redisClient } from "../../config/db.js";
 import { RequestHandler, Request, Response } from "express";
-import { validate } from "../../utils/zodValidateRequest";
+import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 import nodemailer from "nodemailer";
 import crypto from "crypto";

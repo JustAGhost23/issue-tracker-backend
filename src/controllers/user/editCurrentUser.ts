@@ -1,8 +1,8 @@
 import { User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
-import { prisma } from "../../config/db";
-import { validate } from "../../utils/zodValidateRequest";
-import { hashPassword } from "../../utils/password";
+import { prisma } from "../../config/db.js";
+import { validate } from "../../utils/zodValidateRequest.js";
+import { hashPassword } from "../../utils/password.js";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 

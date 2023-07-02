@@ -1,6 +1,6 @@
 import { User } from "@prisma/client";
 import { Request, Response } from "express";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.js";
 
 /**
  @route POST /api/user/delete
@@ -31,7 +31,7 @@ export const deleteCurrentUser = async (req: Request, res: Response) => {
         id: reqUser.id,
       },
     });
-    if (!user) {
+    if (!deletedUser) {
       res
         .status(500)
         .json({ message: "Something went wrong while deleting user" });

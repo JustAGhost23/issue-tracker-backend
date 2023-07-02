@@ -1,7 +1,7 @@
 import { Project, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
-import { prisma } from "../../config/db";
-import { validate } from "../../utils/zodValidateRequest";
+import { prisma } from "../../config/db.js";
+import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
@@ -13,7 +13,23 @@ const createProjectSchema = z.object({
         required_error: "Name is required",
       })
       .min(4, { message: "Must be atleast 4 characters long" })
-      .max(60, { message: "Must be atmost 60 characters long" }),
+      .max(60, { message: "Must be atmost 60 characters long" })
+      .refine(
+        (s) => {
+          return !s.trimStart().trimEnd().includes(" ");
+        },
+        (s) => ({
+          message: `${s} is not a valid project name, please remove the whitespaces`,
+        })
+      )
+      .refine(
+        (s) => {
+          return !/[A-Z]/.test(s);
+        },
+        (s) => ({
+          message: `${s} is not a valid project name, please remove the capital letters`,
+        })
+      ),
     description: z
       .string({
         invalid_type_error: "Description must be of type string",
@@ -23,7 +39,7 @@ const createProjectSchema = z.object({
 });
 
 /**
- * @route POST /api/projects
+ * @route POST /api/projects/
  * @type RequestHandler
  */
 
@@ -61,14 +77,19 @@ export const createProject = async (req: Request, res: Response) => {
     }
 
     // Create new project
-    let project: Project;
+    let project: Project | null;
     if (!req.body.description) {
       project = await prisma.project.create({
         data: {
           name: req.body.name,
           createdBy: {
             connect: {
-              id: reqUser.id,
+              id: user.id,
+            },
+          },
+          members: {
+            connect: {
+              id: user.id,
             },
           },
         },
@@ -80,11 +101,22 @@ export const createProject = async (req: Request, res: Response) => {
           description: req.body.description,
           createdBy: {
             connect: {
-              id: reqUser.id,
+              id: user.id,
+            },
+          },
+          members: {
+            connect: {
+              id: user.id,
             },
           },
         },
       });
+    }
+    if (!project) {
+      res
+        .status(500)
+        .json({ message: "Something went wrong while creating project" });
+      return;
     }
 
     // Project created successfully

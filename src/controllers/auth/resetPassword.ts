@@ -1,9 +1,9 @@
 import { User } from "@prisma/client";
-import { Token } from "../../utils/enums";
-import { prisma, redisClient } from "../../config/db";
+import { Token } from "../../utils/enums.js";
+import { prisma, redisClient } from "../../config/db.js";
 import { RequestHandler, Request, Response } from "express";
-import { validate } from "../../utils/zodValidateRequest";
-import { hashPassword } from "../../utils/password";
+import { validate } from "../../utils/zodValidateRequest.js";
+import { hashPassword } from "../../utils/password.js";
 import { z } from "zod";
 
 // Zod schema to validate request
