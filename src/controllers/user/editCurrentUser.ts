@@ -42,8 +42,9 @@ const editCurrentUserSchema = z.object({
  */
 
 // Function to validate request using zod schema
-export const editCurrentUserValidator: RequestHandler =
-  validate(editCurrentUserSchema);
+export const editCurrentUserValidator: RequestHandler = validate(
+  editCurrentUserSchema
+);
 
 export const editCurrentUser = async (req: Request, res: Response) => {
   try {
@@ -62,26 +63,37 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-    // Check if username is already in use
     if (req.body.username) {
-      const foundUser = await prisma.user.findFirst({
-        where: {
-          username: req.body.username,
-        },
-      });
-      if (foundUser) {
-        return res
-          .status(409)
-          .send({ error: "Another account with this username already exists" });
+      if (req.body.username != user.username) {
+        // Check if username is already in use
+        if (req.body.username) {
+          const foundUser = await prisma.user.findFirst({
+            where: {
+              username: req.body.username,
+            },
+          });
+          if (foundUser) {
+            return res
+              .status(409)
+              .send({
+                error: "Another account with this username already exists",
+              });
+          }
+        }
       }
     }
 
     // Update user details
-    const hashed = await hashPassword(req.body.password);
-
-    user.name = req.body.name;
-    user.username = req.body.username;
-    user.password = hashed;
+    if (req.body.name) {
+      user.name = req.body.name;
+    }
+    if (req.body.username) {
+      user.username = req.body.username;
+    }
+    if (req.body.password) {
+      const hashed = await hashPassword(req.body.password);
+      user.password = hashed;
+    }
 
     const newUser = await prisma.user.update({
       where: {
@@ -137,7 +149,7 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
       .send({
         data: {
-          newUser
+          newUser,
         },
         message: "Edited user and updated JWT successfully",
       });
