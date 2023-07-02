@@ -18,7 +18,7 @@ const getUserByUsernameSchema = z.object({
 
 /**
  @route GET /api/user/:username
- @desc Request Handler
+ @type Request Handler
  */
 
 // Function to validate request using zod schema
@@ -71,6 +71,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
       data: {
         user,
       },
+      message: "User found"
     });
   } catch (err) {
     console.log(err);

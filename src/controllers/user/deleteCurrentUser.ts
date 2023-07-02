@@ -4,7 +4,7 @@ import { prisma } from "../../config/db.js";
 
 /**
  @route POST /api/user/delete
- @desc Request Handler
+ @type Request Handler
  */
 
 export const deleteCurrentUser = async (req: Request, res: Response) => {

@@ -28,7 +28,7 @@ const getAllUsersSchema = z.object({
 
 /**
  @route GET /api/user/
- @desc Request Handler
+ @type Request Handler
  */
 
 // Function to validate request using zod schema

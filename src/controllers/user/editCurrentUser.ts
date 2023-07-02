@@ -38,7 +38,7 @@ const editCurrentUserSchema = z.object({
 
 /**
  @route POST /api/user/edit
- @desc Edit current user details
+ @type Request Handler
  */
 
 // Function to validate request using zod schema
@@ -138,7 +138,7 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       },
     });
     if (!newUser) {
-      return res.status(500).send({ error: "Error while adding new user" });
+      return res.status(500).send({ error: "Error while editing user" });
     }
 
     // Create JWT Token
