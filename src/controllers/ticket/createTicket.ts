@@ -40,7 +40,7 @@ const createTicketSchema = z.object({
  * @type RequestHandler
  */
 
-export const createTickerValidator: RequestHandler =
+export const createTicketValidator: RequestHandler =
   validate(createTicketSchema);
 
 export const createTicket = async (req: Request, res: Response) => {

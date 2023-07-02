@@ -1,4 +1,6 @@
 import { Router } from "express";
+import generateUserToken from "../middlewares/generateToken.js";
+import passport from "../middlewares/passportAuth.js";
 import { registerValidator, register } from "../controllers/auth/register.js";
 import { loginValidator, login } from "../controllers/auth/login.js";
 import { logout } from "../controllers/auth/logout.js";
@@ -14,8 +16,6 @@ import {
   resetPassword,
   resetPasswordValidator,
 } from "../controllers/auth/resetPassword.js";
-import generateUserToken from "../middlewares/generateToken.js";
-import passport from "../middlewares/passportAuth.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 const passportGoogle = passport.authenticate("google", {

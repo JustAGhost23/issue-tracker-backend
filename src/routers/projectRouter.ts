@@ -1,9 +1,9 @@
 import { Router } from "express";
+import passport from "../middlewares/passportAuth.js";
 import {
   createProject,
   createProjectValidator,
 } from "../controllers/project/createProject.js";
-import passport from "../middlewares/passportAuth.js";
 import {
   deleteProject,
   deleteProjectValidator,

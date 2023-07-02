@@ -1,4 +1,5 @@
 import { Router } from "express";
+import passport from "../middlewares/passportAuth.js";
 import {
   getAllUsersValidator,
   getAllUsers,
@@ -12,7 +13,6 @@ import {
   getUserByUsername,
 } from "../controllers/user/getUserByUsername.js";
 import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser.js";
-import passport from "../middlewares/passportAuth.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
