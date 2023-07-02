@@ -16,6 +16,7 @@ import {
   getProjectByName,
   getProjectByNameValidator,
 } from "../controllers/project/getProjectByName.js";
+import { addUser, addUserValidator } from "../controllers/project/addUser.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -34,7 +35,7 @@ projectRouter.get("/", passportJWT, getAllProjectsValidator, getAllProjects);
 projectRouter.post("/", passportJWT, createProjectValidator, createProject);
 
 /**
- @route GET /api/project/:username/:name
+ @route /api/project/:username/:name
  @desc  Get project by name
  */
 projectRouter.get(
@@ -42,6 +43,17 @@ projectRouter.get(
   passportJWT,
   getProjectByNameValidator,
   getProjectByName
+);
+
+/**
+ * @route /api/projects/:username/:name/add-user
+ * @type Add user to project
+ */
+projectRouter.post(
+  "/:username/:name/add-user",
+  passportJWT,
+  addUserValidator,
+  addUser
 );
 
 /**
