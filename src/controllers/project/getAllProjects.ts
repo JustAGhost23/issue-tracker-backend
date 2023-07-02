@@ -18,9 +18,9 @@ const getAllProjectsSchema = z.object({
       })
       .min(1, { message: "Page number cannot be less than 1" })
       .optional(),
-    contains: z
+    keyword: z
       .string({
-        invalid_type_error: "Starts with must be of type string",
+        invalid_type_error: "Keyword must be of type string",
       })
       .optional(),
   }),
@@ -40,7 +40,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
     // Figure out how to implement fuzzy search properly.
     const maxItems = parseInt((req.query.items as string) ?? "10");
     const page = parseInt((req.query.page as string) ?? "1") - 1;
-    const contains = (req.query.contains as string) ?? "";
+    const keyword = (req.query.keyword as string) ?? "";
 
     if (page < 0) {
       return res.status(400).send({ error: "Invalid page number provided" });
@@ -56,7 +56,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
         take: maxItems,
         where: {
           name: {
-            contains: contains,
+            contains: keyword,
             mode: "insensitive",
           },
         },
@@ -95,7 +95,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
       const totalCount = await prisma.project.count({
         where: {
           name: {
-            contains: contains,
+            contains: keyword,
             mode: "insensitive",
           },
         },

@@ -4,7 +4,16 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getAllUsersSchema = z.object({
+const getAllTicketsOfUserSchema = z.object({
+  params: z.object({
+    username: z
+      .string({
+        invalid_type_error: "Username is not a string",
+        required_error: "Username is required",
+      })
+      .min(8, { message: "Must be at least 8 characters long" })
+      .max(20, { message: "Must be at most 20 characters long" }),
+  }),
   query: z.object({
     items: z
       .string({
@@ -27,14 +36,16 @@ const getAllUsersSchema = z.object({
 });
 
 /**
- @route GET /api/user/
+ @route GET /api/ticket/:username
  @desc Request Handler
  */
 
 // Function to validate request using zod schema
-export const getAllUsersValidator: RequestHandler = validate(getAllUsersSchema);
+export const getAllTicketsOfUserValidator: RequestHandler = validate(
+  getAllTicketsOfUserSchema
+);
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllTicketsOfUser = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
     // Figure out how to implement fuzzy search properly.
@@ -50,9 +61,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
-    // Get list of users
+    // Get list of tickets
     try {
-      const users = await prisma.user.findMany({
+      const tickets = await prisma.ticket.findMany({
         skip: maxItems * page,
         take: maxItems,
         where: {
@@ -60,64 +71,69 @@ export const getAllUsers = async (req: Request, res: Response) => {
             contains: keyword,
             mode: "insensitive",
           },
+          reportedBy: {
+            username: req.params.username,
+          },
         },
         select: {
-          id: true,
-          username: true,
           name: true,
-          email: true,
-          provider: true,
-          projectsOwned: {
+          description: true,
+          priority: true,
+          status: true,
+          project: {
             select: {
               id: true,
               name: true,
-              description: true
-            }
+              description: true,
+            },
           },
-          projects: {
+          reportedBy: {
             select: {
               id: true,
+              username: true,
               name: true,
-              description: true
-            }
+              email: true,
+              provider: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           },
-          ticketsCreated: true,
-          ticketsAssigned: true,
-          comments: true,
-          createdAt: true,
-          updatedAt: true,
+          number: true,
         },
       });
 
-      // Get total count of list of users
-      const totalCount = await prisma.user.count({
+      // Get total count of list of tickets
+      const totalCount = await prisma.ticket.count({
         where: {
           name: {
             contains: keyword,
             mode: "insensitive",
           },
+          reportedBy: {
+            username: req.params.username,
+          },
         },
       });
 
-      if (!users) {
-        return res.status(404).send({ error: "No users found!" });
+      if (!tickets) {
+        return res.status(404).send({ error: "No tickets found!" });
       }
 
-      // Send list of users
+      // Send list of tickets
       res.status(200).send({
         totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: users,
+        data: tickets,
       });
     } catch (err) {
       console.log(err);
       res.status(500).send({
-        error: "Something went wrong while getting users",
+        error: "Something went wrong while getting tickets",
       });
     }
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting users",
+      error: "Something went wrong while getting tickets",
     });
   }
 };
