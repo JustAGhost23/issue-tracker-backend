@@ -24,6 +24,10 @@ import {
   getAllTicketsOfUser,
   getAllTicketsOfUserValidator,
 } from "../controllers/ticket/getAllTicketsOfUser.js";
+import {
+  getAllTicketsOfProject,
+  getAllTicketsOfProjectValidator,
+} from "../controllers/ticket/getAllTicketsOfProject.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -80,7 +84,7 @@ ticketRouter.get(
 );
 
 /**
- @route GET /api/ticket/:username
+ @route /api/ticket/:username
  @desc  Get all tickets of a user
  */
 ticketRouter.get(
@@ -88,6 +92,17 @@ ticketRouter.get(
   passportJWT,
   getAllTicketsOfUserValidator,
   getAllTicketsOfUser
+);
+
+/**
+ @route /api/ticket/:username/:name
+ @desc  Get all tickets of a project
+ */
+ticketRouter.get(
+  "/:username/:name",
+  passportJWT,
+  getAllTicketsOfProjectValidator,
+  getAllTicketsOfProject
 );
 
 export default ticketRouter;
