@@ -12,11 +12,14 @@ import {
   getAllProjects,
   getAllProjectsValidator,
 } from "../controllers/project/getAllProjects.js";
+import {
+  getProjectByName,
+  getProjectByNameValidator,
+} from "../controllers/project/getProjectByName.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
 const projectRouter: Router = Router();
-
 
 /**
  @route /api/project/
@@ -29,6 +32,17 @@ projectRouter.get("/", passportJWT, getAllProjectsValidator, getAllProjects);
  @desc  Create new project
  */
 projectRouter.post("/", passportJWT, createProjectValidator, createProject);
+
+/**
+ @route GET /api/project/:username/:name
+ @desc  Get project by name
+ */
+projectRouter.get(
+  "/:username/:name",
+  passportJWT,
+  getProjectByNameValidator,
+  getProjectByName
+);
 
 /**
  @route /api/project/:username/:name/delete
