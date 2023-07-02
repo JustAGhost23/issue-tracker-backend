@@ -11,64 +11,64 @@ datasource db {
 }
 
 model User {
-  id                Int               @default(autoincrement()) @id 
-  email             String            @unique
-  username          String            @unique
-  name              String
-  password          String?           @default("")
-  provider          Provider[]
-  googleId          String?           @default("")
-  projectsOwned     Project[]         @relation("ProjectsOwned")
-  projects          Project[]
-  ticketsCreated    Ticket[]          @relation("TicketsCreated")
-  ticketsAssigned   Ticket[]     
-  comments          Comment[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id              Int        @id @default(autoincrement())
+  email           String     @unique
+  username        String     @unique
+  name            String
+  password        String?    @default("")
+  provider        Provider[]
+  googleId        String?    @default("")
+  projectsOwned   Project[]  @relation("ProjectsOwned")
+  projects        Project[]
+  ticketsCreated  Ticket[]   @relation("TicketsCreated")
+  ticketsAssigned Ticket[]   @relation("TicketsAssigned")
+  comments        Comment[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 model Project {
-  id                Int               @default(autoincrement()) @id
-  name              String            @unique
-  description       String?           @default("No description added yet")
-  createdBy         User              @relation("ProjectsOwned", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById       Int
-  members           User[]
-  tickets           Ticket[]          @relation("ProjectTickets")
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @default("No description added yet")
+  createdBy   User     @relation("ProjectsOwned", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById Int
+  members     User[]
+  tickets     Ticket[] @relation("ProjectTickets")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([name, createdById], name: "projectName")
 }
 
 model Ticket {
-  id                Int               @default(autoincrement()) @id
-  number            Int               @default(autoincrement())
-  name              String
-  description       String?           @default("No description added yet")
-  reportedBy        User              @relation("TicketsCreated", fields: [reportedById], references: [id], onDelete: Cascade)
-  reportedById      Int
-  project           Project           @relation("ProjectTickets", fields: [projectId], references: [id], onDelete: Cascade)
-  projectId         Int
-  priority          Priority
-  status            Status
-  assignees         User[]
-  comments          Comment[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id           Int       @id @default(autoincrement())
+  number       Int       @default(autoincrement())
+  name         String
+  description  String?   @default("No description added yet")
+  reportedBy   User      @relation("TicketsCreated", fields: [reportedById], references: [id], onDelete: Cascade)
+  reportedById Int
+  project      Project   @relation("ProjectTickets", fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    Int
+  priority     Priority
+  status       Status
+  assignees    User[]    @relation("TicketsAssigned")
+  comments     Comment[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([name, projectId])
 }
 
 model Comment {
-  id                String       @id @default(uuid())
-  text              String
-  ticket            Ticket       @relation(fields: [ticketId], references: [id])
-  ticketId          Int
-  author            User         @relation(fields: [authorId], references: [id])
-  authorId          Int
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id        String   @id @default(uuid())
+  text      String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Provider {
