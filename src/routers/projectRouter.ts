@@ -17,6 +17,10 @@ import {
   getProjectByNameValidator,
 } from "../controllers/project/getProjectByName.js";
 import { addUser, addUserValidator } from "../controllers/project/addUser.js";
+import {
+  removeUser,
+  removeUserValidator,
+} from "../controllers/project/removeUser.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -60,6 +64,13 @@ projectRouter.post(
  * @route /api/projects/:username/:name/remove-user
  * @desc  Remove user from project
  */
+
+projectRouter.post(
+  "/:username/:name/remove-user",
+  passportJWT,
+  removeUserValidator,
+  removeUser
+);
 
 /**
  @route /api/project/:username/:name/delete

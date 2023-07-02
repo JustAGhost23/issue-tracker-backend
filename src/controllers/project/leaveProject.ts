@@ -5,7 +5,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const removeUserSchema = z.object({
+const leaveProjectSchema = z.object({
   params: z.object({
     username: z
       .string({
@@ -38,26 +38,18 @@ const removeUserSchema = z.object({
         })
       ),
   }),
-  body: z.object({
-    username: z
-      .string({
-        invalid_type_error: "Username is not a string",
-        required_error: "Username is required",
-      })
-      .min(8, { message: "Must be at least 8 characters long" })
-      .max(20, { message: "Must be at most 20 characters long" }),
-  }),
 });
 
 /**
- * @route POST /api/project/:username/:name/remove-user
+ * @route POST /api/project/:username/:name/leave
  * @type RequestHandler
  */
 
 // Function to validate request using zod schema
-export const removeUserValidator: RequestHandler = validate(removeUserSchema);
+export const leaveProjectValidator: RequestHandler =
+  validate(leaveProjectSchema);
 
-export const removeUser = async (req: Request, res: Response) => {
+export const leaveProject = async (req: Request, res: Response) => {
   try {
     // Check if user is valid
     const reqUser = req.user as User;
@@ -75,33 +67,36 @@ export const removeUser = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-    // Check if user to be removed exists
-    const removedUser = await prisma.user.findFirst({
+    // Check if project owner exists
+    const projectOwner = await prisma.user.findFirst({
       where: {
-        username: req.body.username,
+        username: req.params.username,
       },
     });
-    if (!removedUser) {
-      return res.status(404).send({ error: "User to be removed not found" });
+    if (!projectOwner) {
+      return res.status(404).send({ error: "Project owner not found" });
     }
 
     // Check if project exists
     const project = await prisma.project.findUnique({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
+      },
+      select: {
+        members: true,
       },
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
     }
 
-    // Check if user owns project
-    if (reqUser.username != req.params.username) {
-      return res.status(403).send({ error: "User does not own this project" });
+    // Check if user is in the project
+    if (!project.members.includes(user)) {
+      return res.status(400).send({ error: "User not in project" });
     }
 
     // Check if user to be removed is project owner
-    if (user.id == removedUser.id) {
+    if (projectOwner.id == user.id) {
       return res.status(400).send({
         error:
           "Cannot remove project owner, please transfer ownership or delete project",
@@ -111,12 +106,12 @@ export const removeUser = async (req: Request, res: Response) => {
     // Update project
     const newProject = await prisma.project.update({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
       },
       data: {
         members: {
           disconnect: {
-            id: removedUser.id,
+            id: user.id,
           },
         },
       },
@@ -151,12 +146,12 @@ export const removeUser = async (req: Request, res: Response) => {
       },
     });
 
-    // Removed user successfully
+    // Left project successfully
     res.status(200).send({
       data: {
         newProject,
       },
-      message: "Removed user successfully",
+      message: "Left project successfully",
     });
   } catch (err) {
     console.log(err);
