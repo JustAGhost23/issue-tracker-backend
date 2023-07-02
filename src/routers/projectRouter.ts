@@ -25,6 +25,10 @@ import {
   leaveProject,
   leaveProjectValidator,
 } from "../controllers/project/leaveProject.js";
+import {
+  transferOwnership,
+  transferOwnershipValidator,
+} from "../controllers/project/transferOwnership.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -51,6 +55,17 @@ projectRouter.get(
   passportJWT,
   getProjectByNameValidator,
   getProjectByName
+);
+
+/**
+ * @route /api/project/:username/:name/transfer
+ * @desc  Transfer ownership of project
+ */
+projectRouter.post(
+  "/:username/:name",
+  passportJWT,
+  transferOwnershipValidator,
+  transferOwnership
 );
 
 /**
