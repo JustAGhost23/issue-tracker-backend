@@ -21,6 +21,10 @@ import {
   removeUser,
   removeUserValidator,
 } from "../controllers/project/removeUser.js";
+import {
+  leaveProject,
+  leaveProjectValidator,
+} from "../controllers/project/leaveProject.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -70,6 +74,17 @@ projectRouter.post(
   passportJWT,
   removeUserValidator,
   removeUser
+);
+
+/**
+ * @route /api/project/:username/:name/leave
+ * @desc Leave a project
+ */
+projectRouter.post(
+  "/:username/:name/leave",
+  passportJWT,
+  leaveProjectValidator,
+  leaveProject
 );
 
 /**
