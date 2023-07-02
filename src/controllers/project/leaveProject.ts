@@ -96,9 +96,9 @@ export const leaveProject = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member of the project
-    if (user.id in project.members) {
-      res.status(400).send({ error: "User is not a member of the project" });
-    }
+    // if (user.id in project.members) {
+    //   res.status(400).send({ error: "User is not a member of the project" });
+    // }
 
     // Check if user to be removed is project owner
     if (projectOwner.id == user.id) {
@@ -146,7 +146,14 @@ export const leaveProject = async (req: Request, res: Response) => {
             updatedAt: true,
           },
         },
-        tickets: true,
+        tickets: {
+          select: {
+            name: true,
+            description: true,
+            priority: true,
+            status: true,
+          },
+        },
         createdAt: true,
       },
     });

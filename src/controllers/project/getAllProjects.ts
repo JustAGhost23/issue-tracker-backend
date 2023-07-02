@@ -86,7 +86,14 @@ export const getAllProjects = async (req: Request, res: Response) => {
               updatedAt: true,
             },
           },
-          tickets: true,
+          tickets: {
+            select: {
+              name: true,
+              description: true,
+              priority: true,
+              status: true,
+            },
+          },
           createdAt: true,
         },
       });

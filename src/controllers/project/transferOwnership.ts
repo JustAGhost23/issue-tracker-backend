@@ -77,6 +77,16 @@ export const transferOwnership = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
+    // Check if project owner exists
+    const projectOwner = await prisma.user.findFirst({
+      where: {
+        username: req.params.username,
+      },
+    });
+    if (!projectOwner) {
+      return res.status(404).send({ error: "Project owner not found" });
+    }
+
     // Check if user to be made owner exists
     const newProjectOwner = await prisma.user.findFirst({
       where: {
@@ -90,7 +100,7 @@ export const transferOwnership = async (req: Request, res: Response) => {
     // Check if project exists
     const project = await prisma.project.findUnique({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
       },
     });
     if (!project) {
@@ -105,7 +115,7 @@ export const transferOwnership = async (req: Request, res: Response) => {
     // Update project
     const newProject = await prisma.project.update({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
       },
       data: {
         createdBy: {
@@ -116,8 +126,8 @@ export const transferOwnership = async (req: Request, res: Response) => {
         members: {
           connect: {
             id: newProjectOwner.id,
-          }
-        }
+          },
+        },
       },
       select: {
         id: true,
@@ -145,7 +155,14 @@ export const transferOwnership = async (req: Request, res: Response) => {
             updatedAt: true,
           },
         },
-        tickets: true,
+        tickets: {
+          select: {
+            name: true,
+            description: true,
+            priority: true,
+            status: true,
+          },
+        },
         createdAt: true,
       },
     });

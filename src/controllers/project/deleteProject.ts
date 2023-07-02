@@ -67,10 +67,20 @@ export const deleteProject = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
+    // Check if project owner exists
+    const projectOwner = await prisma.user.findFirst({
+      where: {
+        username: req.params.username,
+      },
+    });
+    if (!projectOwner) {
+      return res.status(404).send({ error: "Project owner not found" });
+    }
+
     // Check if project exists
     const project = await prisma.project.findUnique({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
       },
     });
     if (!project) {
@@ -85,7 +95,7 @@ export const deleteProject = async (req: Request, res: Response) => {
     // Delete project from database
     const deletedProject = await prisma.project.delete({
       where: {
-        projectName: { name: req.params.name, createdById: reqUser.id },
+        projectName: { name: req.params.name, createdById: projectOwner.id },
       },
     });
     if (!deletedProject) {
