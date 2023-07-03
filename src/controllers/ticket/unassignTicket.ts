@@ -190,6 +190,17 @@ export const unassignTicket = async (req: Request, res: Response) => {
             updatedAt: true,
           },
         },
+        assignees: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            email: true,
+            provider: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         number: true,
       },
     });

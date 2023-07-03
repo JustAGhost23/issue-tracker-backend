@@ -61,6 +61,16 @@ export const getAllProjectsOfUser = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: {
+        username: req.params.username,
+      },
+    });
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
     // Get list of projects
     try {
       const projects = await prisma.project.findMany({

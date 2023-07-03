@@ -36,7 +36,7 @@ const getAllTicketsOfUserSchema = z.object({
 });
 
 /**
- @route GET /api/ticket/:username
+ @route GET /api/ticket/user/:username/assigned
  @desc Request Handler
  */
 
@@ -61,6 +61,16 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: {
+        username: req.params.username,
+      },
+    });
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
     // Get list of tickets
     try {
       const tickets = await prisma.ticket.findMany({
@@ -73,9 +83,9 @@ export const getAllTicketsOfUser = async (req: Request, res: Response) => {
           },
           assignees: {
             some: {
-              username: req.params.username
-            }
-          }
+              username: req.params.username,
+            },
+          },
         },
         select: {
           name: true,

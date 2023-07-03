@@ -84,11 +84,12 @@ ticketRouter.get(
 );
 
 /**
- @route /api/ticket/:username
- @desc  Get all tickets of a user
+ (Need to change this route to something more readable)
+ @route /api/ticket/user/:username/assigned
+ @desc  Get all assigned tickets of a user
  */
 ticketRouter.get(
-  "/:username",
+  "/user/:username/assigned",
   passportJWT,
   getAllTicketsOfUserValidator,
   getAllTicketsOfUser

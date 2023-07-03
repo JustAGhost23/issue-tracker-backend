@@ -144,6 +144,7 @@ export const editTicket = async (req: Request, res: Response) => {
         id: newTicket.id,
       },
       select: {
+        id: true,
         name: true,
         description: true,
         priority: true,
@@ -156,6 +157,17 @@ export const editTicket = async (req: Request, res: Response) => {
           },
         },
         reportedBy: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            email: true,
+            provider: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        assignees: {
           select: {
             id: true,
             username: true,
