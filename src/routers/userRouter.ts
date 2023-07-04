@@ -13,6 +13,10 @@ import {
   getUserByUsername,
 } from "../controllers/user/getUserByUsername.js";
 import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser.js";
+import {
+  getUserProjects,
+  getUserProjectsValidator,
+} from "../controllers/user/getUserProjects.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -44,6 +48,16 @@ userRouter.get(
   passportJWT,
   getUserByUsernameValidator,
   getUserByUsername
+);
+
+/**
+ @route /api/user/:username/projects
+ @desc Get user projects
+ */
+userRouter.get(
+  "/:username/projects",
+  getUserProjectsValidator,
+  getUserProjects
 );
 
 /**
