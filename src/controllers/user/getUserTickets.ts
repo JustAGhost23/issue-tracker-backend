@@ -4,7 +4,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getUserProjectsSchema = z.object({
+const getUserTicketsSchema = z.object({
   params: z.object({
     username: z
       .string({
@@ -36,16 +36,16 @@ const getUserProjectsSchema = z.object({
 });
 
 /**
- @route GET /api/user/:username/projects
- @type Request Handler
+ @route GET /api/ticket/user/:username/assigned
+ @desc Request Handler
  */
 
 // Function to validate request using zod schema
-export const getUserProjectsValidator: RequestHandler = validate(
-  getUserProjectsSchema
+export const getUserTicketsValidator: RequestHandler = validate(
+  getUserTicketsSchema
 );
 
-export const getUserProjects = async (req: Request, res: Response) => {
+export const getUserTickets = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
     // Figure out how to implement fuzzy search properly.
@@ -71,9 +71,9 @@ export const getUserProjects = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-    // Get list of projects
+    // Get list of tickets
     try {
-      const projects = await prisma.project.findMany({
+      const tickets = await prisma.ticket.findMany({
         skip: maxItems * page,
         take: maxItems,
         where: {
@@ -81,58 +81,47 @@ export const getUserProjects = async (req: Request, res: Response) => {
             contains: keyword,
             mode: "insensitive",
           },
-          members: {
+          assignees: {
             some: {
               username: req.params.username,
             },
           },
         },
         select: {
-          id: true,
           name: true,
           description: true,
-          createdBy: {
+          priority: true,
+          status: true,
+          project: {
             select: {
               id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          },
-          members: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          },
-          tickets: {
-            select: {
               name: true,
               description: true,
-              priority: true,
-              status: true,
             },
           },
-          createdAt: true,
+          reportedBy: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+              provider: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          number: true,
         },
       });
 
-      // Get total count of list of projects
-      const totalCount = await prisma.project.count({
+      // Get total count of list of tickets
+      const totalCount = await prisma.ticket.count({
         where: {
           name: {
             contains: keyword,
             mode: "insensitive",
           },
-          members: {
+          assignees: {
             some: {
               username: req.params.username,
             },
@@ -140,25 +129,25 @@ export const getUserProjects = async (req: Request, res: Response) => {
         },
       });
 
-      if (!projects) {
-        return res.status(404).send({ error: "No projects found!" });
+      if (!tickets) {
+        return res.status(404).send({ error: "No tickets found!" });
       }
 
-      // Send list of projects
+      // Send list of tickets
       res.status(200).send({
         totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: projects,
+        data: tickets,
       });
     } catch (err) {
       console.log(err);
       res.status(500).send({
-        error: "Something went wrong while getting projects",
+        error: "Something went wrong while getting tickets",
       });
     }
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting projects",
+      error: "Something went wrong while getting tickets",
     });
   }
 };
