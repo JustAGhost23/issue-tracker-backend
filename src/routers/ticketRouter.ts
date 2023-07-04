@@ -21,10 +21,6 @@ import {
   getTicketByIdValidator,
 } from "../controllers/ticket/getTicketById.js";
 import {
-  getAllTicketsOfUser,
-  getAllTicketsOfUserValidator,
-} from "../controllers/ticket/getAllTicketsOfUser.js";
-import {
   getAllTicketsOfProject,
   getAllTicketsOfProjectValidator,
 } from "../controllers/ticket/getAllTicketsOfProject.js";
@@ -81,18 +77,6 @@ ticketRouter.get(
   passportJWT,
   getTicketByIdValidator,
   getTicketById
-);
-
-/**
- (Need to change this route to something more readable)
- @route /api/ticket/user/:username/assigned
- @desc  Get all assigned tickets of a user
- */
-ticketRouter.get(
-  "/user/:username/assigned",
-  passportJWT,
-  getAllTicketsOfUserValidator,
-  getAllTicketsOfUser
 );
 
 /**
