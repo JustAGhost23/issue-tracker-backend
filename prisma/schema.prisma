@@ -43,7 +43,7 @@ model Project {
 
 model Ticket {
   id           Int       @id @default(autoincrement())
-  number       Int       
+  number       Int
   name         String
   description  String?   @default("No description added yet")
   reportedBy   User      @relation("TicketsCreated", fields: [reportedById], references: [id], onDelete: Cascade)
@@ -61,7 +61,7 @@ model Ticket {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   text      String
   ticket    Ticket   @relation(fields: [ticketId], references: [id])
   ticketId  Int
