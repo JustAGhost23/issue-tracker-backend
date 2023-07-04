@@ -29,10 +29,6 @@ import {
   transferOwnership,
   transferOwnershipValidator,
 } from "../controllers/project/transferOwnership.js";
-import {
-  getAllProjectsOfUser,
-  getAllProjectsOfUserValidator,
-} from "../controllers/project/getAllProjectsOfUser.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -59,17 +55,6 @@ projectRouter.get(
   passportJWT,
   getProjectByNameValidator,
   getProjectByName
-);
-
-/**
- @route /api/project/:username
- @desc  Get all projects of a user
- */
-projectRouter.get(
-  "/:username",
-  passportJWT,
-  getAllProjectsOfUserValidator,
-  getAllProjectsOfUser
 );
 
 /**
