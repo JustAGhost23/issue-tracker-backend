@@ -29,6 +29,10 @@ import {
   transferOwnership,
   transferOwnershipValidator,
 } from "../controllers/project/transferOwnership.js";
+import {
+  getProjectTickets,
+  getProjectTicketsValidator,
+} from "../controllers/project/getProjectTickets.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -36,19 +40,19 @@ const projectRouter: Router = Router();
 
 /**
  @route /api/project/
- @desc  Get all projects
+ @desc Get all projects
  */
 projectRouter.get("/", passportJWT, getAllProjectsValidator, getAllProjects);
 
 /**
  @route /api/project/
- @desc  Create new project
+ @desc Create new project
  */
 projectRouter.post("/", passportJWT, createProjectValidator, createProject);
 
 /**
  @route /api/project/:username/:name
- @desc  Get project by name
+ @desc Get project by name
  */
 projectRouter.get(
   "/:username/:name",
@@ -58,8 +62,19 @@ projectRouter.get(
 );
 
 /**
+ @route /api/project/:username/:name/tickets
+ @desc Get project tickets
+ */
+projectRouter.get(
+  "/:username/:name/tickets",
+  passportJWT,
+  getProjectTicketsValidator,
+  getProjectTickets
+);
+
+/**
  * @route /api/project/:username/:name/transfer
- * @desc  Transfer ownership of project
+ * @desc Transfer ownership of project
  */
 projectRouter.post(
   "/:username/:name/transfer",
@@ -81,7 +96,7 @@ projectRouter.post(
 
 /**
  * @route /api/projects/:username/:name/remove-user
- * @desc  Remove user from project
+ * @desc Remove user from project
  */
 
 projectRouter.post(
@@ -104,7 +119,7 @@ projectRouter.post(
 
 /**
  @route /api/project/:username/:name/delete
- @desc  Delete project
+ @desc Delete project
  */
 projectRouter.post(
   "/:username/:name/delete",
