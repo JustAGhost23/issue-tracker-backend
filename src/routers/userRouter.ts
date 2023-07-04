@@ -17,6 +17,10 @@ import {
   getUserProjects,
   getUserProjectsValidator,
 } from "../controllers/user/getUserProjects.js";
+import {
+  getUserTickets,
+  getUserTicketsValidator,
+} from "../controllers/user/getUserTickets.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -56,8 +60,20 @@ userRouter.get(
  */
 userRouter.get(
   "/:username/projects",
+  passportJWT,
   getUserProjectsValidator,
   getUserProjects
+);
+
+/**
+ @route /api/user/:username/tickets
+ @desc Get user tickets
+ */
+userRouter.get(
+  "/:username/tickets",
+  passportJWT,
+  getUserTicketsValidator,
+  getUserTickets
 );
 
 /**

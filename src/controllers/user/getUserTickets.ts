@@ -36,7 +36,7 @@ const getUserTicketsSchema = z.object({
 });
 
 /**
- @route GET /api/ticket/user/:username/assigned
+ @route GET /api/user/:username/tickets
  @desc Request Handler
  */
 
