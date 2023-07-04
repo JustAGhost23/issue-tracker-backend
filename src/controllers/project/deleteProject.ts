@@ -109,7 +109,7 @@ export const deleteProject = async (req: Request, res: Response) => {
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting user by username",
+      error: "Something went wrong while deleting project",
     });
   }
 };
