@@ -4,7 +4,12 @@ import { createClient } from "redis";
  * This is the code that connects to the database.
  */
 
-const redisClient = createClient();
+const redisClient = createClient({
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT!)
+  }
+});
 
 redisClient.on("error", function (err) {
   console.log(
