@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  db:
+    image: "postgres:15.3-bookworm"
+    env_file:
+      - database.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 30s
+      retries: 3
+
+  cache:
+    image: redis:7.0
+    env_file:
+      - database.env
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - database.env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    volumes:
+      - ./src:/usr/local/app/src
+      - ./tsconfig.json:/usr/local/app/tsconfig.json
+    ports:
+      - "${PORT}:${PORT}"
