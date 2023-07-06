@@ -23,7 +23,7 @@ const deleteCommentSchema = z.object({
 
 /**
  @route POST /api/comment/:commentId/delete
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
