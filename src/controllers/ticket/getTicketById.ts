@@ -8,14 +8,14 @@ const getTicketByIdSchema = z.object({
   params: z.object({
     ticketId: z.coerce
       .number({
-        invalid_type_error: "id not a number",
-        required_error: "id is a required path parameter",
+        invalid_type_error: "ticketId not a number",
+        required_error: "ticketId is a required path parameter",
       })
       .positive({
-        message: "invalid id",
+        message: "invalid ticketId",
       })
       .int({
-        message: "invalid id",
+        message: "invalid ticketId",
       }),
   }),
 });
