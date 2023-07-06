@@ -21,6 +21,10 @@ import {
   getUserTickets,
   getUserTicketsValidator,
 } from "../controllers/user/getUserTickets.js";
+import {
+  getUserComments,
+  getUserCommentsValidator,
+} from "../controllers/user/getUserComments.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -74,6 +78,17 @@ userRouter.get(
   passportJWT,
   getUserTicketsValidator,
   getUserTickets
+);
+
+/**
+ @route /api/user/:username/comments
+ @desc Get user comments
+ */
+userRouter.get(
+  "/:username/comments",
+  passportJWT,
+  getUserCommentsValidator,
+  getUserComments
 );
 
 /**
