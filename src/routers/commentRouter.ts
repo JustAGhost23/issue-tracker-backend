@@ -8,6 +8,10 @@ import {
   deleteComment,
   deleteCommentValidator,
 } from "../controllers/comment/deleteComment.js";
+import {
+  editComment,
+  editCommentValidator,
+} from "../controllers/comment/editComment.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -18,6 +22,17 @@ const commentRouter: Router = Router();
  @desc Create new comment
  */
 commentRouter.post("/", passportJWT, createCommentValidator, createComment);
+
+/**
+ @route /api/comment/:commentId/edit
+ @desc Edit comment
+ */
+commentRouter.post(
+  "/:commentId/edit",
+  passportJWT,
+  editCommentValidator,
+  editComment
+);
 
 /**
  @route /api/comment/:commentId/delete
