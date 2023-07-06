@@ -22,7 +22,7 @@ const getCommentByIdSchema = z.object({
 
 /**
  @route GET /api/comment/:commentId
- @type Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema

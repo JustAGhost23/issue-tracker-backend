@@ -12,6 +12,10 @@ import {
   editComment,
   editCommentValidator,
 } from "../controllers/comment/editComment.js";
+import {
+  getCommentById,
+  getCommentByIdValidator,
+} from "../controllers/comment/getCommentById.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -43,6 +47,17 @@ commentRouter.post(
   passportJWT,
   deleteCommentValidator,
   deleteComment
+);
+
+/**
+ @route /api/comment/:commentId
+ @desc Get comment by commentId
+ */
+commentRouter.get(
+  "/:commentId",
+  passportJWT,
+  getCommentByIdValidator,
+  getCommentById
 );
 
 export default commentRouter;
