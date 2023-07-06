@@ -20,20 +20,24 @@ import {
   getTicketById,
   getTicketByIdValidator,
 } from "../controllers/ticket/getTicketById.js";
+import {
+  getTicketComments,
+  getTicketCommentsValidator,
+} from "../controllers/ticket/getTicketComments.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
 const ticketRouter: Router = Router();
 
 /**
- * @route /api/ticket/
- * @desc  Create new ticket
+ @route /api/ticket/
+ @desc Create new ticket
  */
 ticketRouter.post("/", passportJWT, createTicketValidator, createTicket);
 
 /**
- * @route /api/ticket/:ticketId/edit
- * @desc  Edit ticket
+ @route /api/ticket/:ticketId/edit
+ @desc Edit ticket
  */
 ticketRouter.post(
   "/:ticketId/edit",
@@ -43,8 +47,8 @@ ticketRouter.post(
 );
 
 /**
- * @route /api/ticket/:ticketId/assign
- * @desc Assign ticket
+ @route /api/ticket/:ticketId/assign
+ @desc Assign ticket
  */
 ticketRouter.post(
   "/:ticketId/assign",
@@ -54,8 +58,8 @@ ticketRouter.post(
 );
 
 /**
- * @route /api/ticket/:ticketId/unassign
- * @desc  Unassign ticket
+ @route /api/ticket/:ticketId/unassign
+ @desc Unassign ticket
  */
 ticketRouter.post(
   "/:ticketId/unassign",
@@ -66,13 +70,24 @@ ticketRouter.post(
 
 /**
  @route /api/ticket/:ticketId
- @desc  Get ticket by id
+ @desc Get ticket by id
  */
 ticketRouter.get(
   "/:ticketId",
   passportJWT,
   getTicketByIdValidator,
   getTicketById
+);
+
+/**
+ @route /api/ticket/:ticketId/comments
+ @desc Get ticket comments
+ */
+ticketRouter.get(
+  "/:ticketId/comments",
+  passportJWT,
+  getTicketCommentsValidator,
+  getTicketComments
 );
 
 export default ticketRouter;
