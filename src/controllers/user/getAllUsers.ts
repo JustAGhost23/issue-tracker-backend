@@ -6,17 +6,27 @@ import { z } from "zod";
 // Zod schema to validate request
 const getAllUsersSchema = z.object({
   query: z.object({
-    items: z
-      .string({
-        invalid_type_error: "Number of items must be of type string",
+    items: z.coerce
+      .number({
+        invalid_type_error: "Number of items not a number",
       })
-      .min(1, { message: "Items cannot be less than 1" })
+      .positive({
+        message: "Number of items cannot be negative",
+      })
+      .int({
+        message: "Number of items must be an integer",
+      })
       .optional(),
-    page: z
-      .string({
-        invalid_type_error: "Page number must be of type string",
+    page: z.coerce
+      .number({
+        invalid_type_error: "Page number not a number",
       })
-      .min(1, { message: "Page number cannot be less than 1" })
+      .positive({
+        message: "Page number cannot be negative",
+      })
+      .int({
+        message: "Page number must be an integer",
+      })
       .optional(),
     keyword: z
       .string({
