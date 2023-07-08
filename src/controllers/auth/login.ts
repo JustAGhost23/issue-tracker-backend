@@ -52,7 +52,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Verify password
-    const validPassword = verifyPassword(req.body.password, user.password);
+    const validPassword = await verifyPassword(req.body.password, user.password);
     if (!validPassword)
       return res.status(403).send({ error: "Incorrect password" });
 
