@@ -1,12 +1,9 @@
 import { User } from "@prisma/client";
-import { Token } from "../../utils/enums.js";
-import { prisma, redisClient } from "../../config/db.js";
+import { prisma } from "../../config/db.js";
 import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest.js";
-import { hashPassword } from "../../utils/password.js";
 import { z } from "zod";
-import nodemailer from "nodemailer";
-import crypto from "crypto";
+import { sendVerificationEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const createUserSchema = z.object({
@@ -74,60 +71,7 @@ export const register = async (req: Request, res: Response) => {
         .send({ error: "Another account with this username already exists" });
     }
 
-    // Hash password
-    const hashed = await hashPassword(req.body.password);
-
-    // Create new email verification token
-    const token = crypto.randomBytes(16).toString("hex");
-    const newToken = await redisClient.set(
-      token,
-      JSON.stringify({
-        email: req.body.email,
-        username: req.body.username,
-        name: req.body.name,
-        password: hashed,
-        type: Token.EMAIL,
-      }),
-      {
-        EX: 60 * 60,
-      }
-    );
-    if (!newToken) {
-      return res.status(500).send({
-        error: "Something went wrong while creating token",
-      });
-    }
-
-    // Create and send verification email to the user
-    // TODO: Edit this link to link it to the frontend
-    const verificationLink = `http://${req.headers.host}/api/auth/verify-email?token=${token}`;
-
-    const config = {
-      service: "gmail",
-      auth: {
-        user: process.env.GOOGLE_MAIL_USER!,
-        pass: process.env.GOOGLE_MAIL_PASSWORD!,
-      },
-    };
-    const transporter = nodemailer.createTransport(config);
-    const msg = {
-      from: "issuetracker@gmail.com",
-      to: req.body.email,
-      subject: "Email Verification",
-      html: `Please click on this <a href="${verificationLink}">link</a> within the next 1 hour to verify your account on issue-tracker.`,
-    };
-
-    transporter
-      .sendMail(msg)
-      .then(() => {
-        console.log("Email sent successfully");
-      })
-      .catch((err) => {
-        console.log(err);
-        return res.status(500).send({
-          error: "Something went wrong while sending verification email",
-        });
-      });
+    await sendVerificationEmail(req, res);
 
     // Email sent successfully
     res.status(200).send({
