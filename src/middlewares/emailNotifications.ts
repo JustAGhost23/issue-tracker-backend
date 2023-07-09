@@ -83,14 +83,6 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
   // Edit this link to link it to the frontend
   const verificationLink = `http://${req.headers.host}/api/auth/reset-password?token=${token}`;
 
-  const config = {
-    service: "gmail",
-    auth: {
-      user: process.env.GOOGLE_MAIL_USER!,
-      pass: process.env.GOOGLE_MAIL_PASSWORD!,
-    },
-  };
-  const transporter = nodemailer.createTransport(config);
   const msg = {
     from: "issuetracker@gmail.com",
     to: req.body.email,
@@ -109,4 +101,27 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
         error: "Something went wrong while sending password recovery email",
       });
     });
-}
+};
+
+export const sendTicketAssignedEmail = async (req: Request, res: Response) => {
+  const frontendLink = `http://${req.headers.host}`;
+
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: req.body.userEmails,
+    subject: "Ticket Assigned",
+    html: `You have been assigned a ticket, please click on this <a href="${frontendLink}">link</a> to go to the website`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).send({
+        error: "Something went wrong while sending password recovery email",
+      });
+    });
+};

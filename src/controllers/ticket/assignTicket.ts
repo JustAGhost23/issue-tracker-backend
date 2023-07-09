@@ -3,6 +3,7 @@ import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { sendTicketAssignedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const assignTicketSchema = z.object({
@@ -31,17 +32,13 @@ const assignTicketSchema = z.object({
       .int({
         message: "invalid projectId",
       }),
-    userIds: z.coerce
-      .number({
-        invalid_type_error: "userIds not a number",
-        required_error: "userIds is a required path parameter",
+    userEmails: z
+      .string({
+        invalid_type_error: "Email is not a string",
+        required_error: "Emails are required",
       })
-      .positive({
-        message: "invalid userId",
-      })
-      .int({
-        message: "invalid userId",
-      })
+      .email({ message: "Must be valid email IDs" })
+      .min(0, { message: "Emails must be non empty strings" })
       .array(),
   }),
 });
@@ -80,7 +77,7 @@ export const assignTicket = async (req: Request, res: Response) => {
         id: true,
         members: {
           select: {
-            id: true,
+            email: true,
           },
         },
       },
@@ -92,7 +89,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     // Check if user is a member of the project
     if (
       !project.members.some((element) => {
-        if (element.id == user.id) {
+        if (element.email == user.email) {
           return true;
         }
         return false;
@@ -112,7 +109,7 @@ export const assignTicket = async (req: Request, res: Response) => {
         id: true,
         assignees: {
           select: {
-            id: true,
+            email: true,
           },
         },
       },
@@ -121,11 +118,11 @@ export const assignTicket = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    const assignedUserIds = req.body.userIds;
+    const assignedEmailIds = req.body.userEmails;
 
-    const assignedUserIdsToAssign: number[] = assignedUserIds.filter(
-      (userId: number) =>
-        !ticket?.assignees.some((assignedUser) => assignedUser.id === userId)
+    const assignedEmailIdsToAssign: string[] = assignedEmailIds.filter(
+      (emailId: string) =>
+        !ticket?.assignees.some((assignedUser) => assignedUser.email === emailId)
     );
 
     // Assign users to ticket
@@ -136,7 +133,7 @@ export const assignTicket = async (req: Request, res: Response) => {
       data: {
         assignees: {
           connect:
-            assignedUserIdsToAssign.map((userId) => ({ id: userId })) || [],
+            assignedEmailIdsToAssign.map((emailId) => ({ email: emailId })) || [],
         },
       },
     });
@@ -187,6 +184,8 @@ export const assignTicket = async (req: Request, res: Response) => {
         number: true,
       },
     });
+
+    await sendTicketAssignedEmail(req, res);
 
     // Ticket assigned successfully
     return res.status(200).send({
