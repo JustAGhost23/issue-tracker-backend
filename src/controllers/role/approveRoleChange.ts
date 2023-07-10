@@ -24,7 +24,7 @@ const approveRoleChangeSchema = z.object({
 });
 
 /**
- @route POST /api/user/request/approve
+ @route POST /api/role/request/approve
  @type RequestHandler
  */
 
