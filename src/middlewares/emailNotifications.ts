@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { redisClient } from "../config/db.js";
 import { hashPassword } from "../utils/password.js";
 import crypto from "crypto";
-import { Ticket } from "@prisma/client";
+import { Project, Ticket } from "@prisma/client";
 
 const config = {
   service: "gmail",
@@ -104,14 +104,14 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
     });
 };
 
-export const sendTicketAssignedEmail = async (ticket: Ticket, assignedEmailIds: string[]) => {
+export const sendTicketAssignedEmail = async (project: Project, ticket: Ticket, assignedEmailIds: string[]) => {
   const frontendLink = `http://localhost:3000`;
 
   const msg = {
     from: "issuetracker@gmail.com",
     to: assignedEmailIds,
     subject: "Ticket Assigned",
-    html: `You have been assigned a ticket, please click on this <a href="${frontendLink}">link</a> to go to the website`,
+    html: `You have been assigned the ticket ${ticket.name} in the project ${project.name}, please click on this <a href="${frontendLink}">link</a> to go to the website`,
   };
 
   transporter
@@ -125,12 +125,12 @@ export const sendTicketAssignedEmail = async (ticket: Ticket, assignedEmailIds: 
     });
 };
 
-export const sendTicketUnassignedEmail = async (ticket: Ticket, assignedEmailId: string) => {
+export const sendTicketUnassignedEmail = async (project: Project, ticket: Ticket, assignedEmailId: string) => {
     const msg = {
         from: "issuetracker@gmail.com",
         to: assignedEmailId,
         subject: "Ticket Unassigned",
-        html: `You have been unassigned from the ticket ${ticket.name}.`,
+        html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
     };
 
     transporter

@@ -79,8 +79,7 @@ export const unassignTicket = async (req: Request, res: Response) => {
       where: {
         id: req.body.projectId,
       },
-      select: {
-        id: true,
+      include: {
         members: {
           select: {
             id: true,
@@ -111,8 +110,7 @@ export const unassignTicket = async (req: Request, res: Response) => {
       where: {
         id: parseInt(req.params.ticketId),
       },
-      select: {
-        id: true,
+      include: {
         assignees: {
           select: {
             id: true,
@@ -199,7 +197,7 @@ export const unassignTicket = async (req: Request, res: Response) => {
       },
     });
 
-    await sendTicketUnassignedEmail(updateTicket, unassignedUser.email);
+    await sendTicketUnassignedEmail(project, updateTicket, unassignedUser.email);
 
     // Ticket unassigned successfully
     return res.status(200).send({

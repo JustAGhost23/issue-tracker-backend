@@ -11,20 +11,22 @@ datasource db {
 }
 
 model User {
-  id              Int        @id @default(autoincrement())
-  email           String     @unique
-  username        String     @unique
+  id              Int             @id @default(autoincrement())
+  email           String          @unique
+  username        String          @unique
   name            String
-  password        String?    @default("")
+  password        String?         @default("")
+  role            Role
   provider        Provider[]
-  googleId        String?    @default("")
-  projectsOwned   Project[]  @relation("ProjectsOwned")
+  googleId        String?         @default("")
+  projectsOwned   Project[]       @relation("ProjectsOwned")
   projects        Project[]
-  ticketsCreated  Ticket[]   @relation("TicketsCreated")
-  ticketsAssigned Ticket[]   @relation("TicketsAssigned")
+  ticketsCreated  Ticket[]        @relation("TicketsCreated")
+  ticketsAssigned Ticket[]        @relation("TicketsAssigned")
   comments        Comment[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  IssueActivity   IssueActivity[]
 }
 
 model Project {
@@ -42,20 +44,21 @@ model Project {
 }
 
 model Ticket {
-  id           Int       @id @default(autoincrement())
-  number       Int
-  name         String
-  description  String?   @default("No description added yet")
-  reportedBy   User      @relation("TicketsCreated", fields: [reportedById], references: [id], onDelete: Cascade)
-  reportedById Int
-  project      Project   @relation("ProjectTickets", fields: [projectId], references: [id], onDelete: Cascade)
-  projectId    Int
-  priority     Priority
-  status       Status
-  assignees    User[]    @relation("TicketsAssigned")
-  comments     Comment[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            Int             @id @default(autoincrement())
+  number        Int
+  name          String
+  description   String?         @default("No description added yet")
+  reportedBy    User            @relation("TicketsCreated", fields: [reportedById], references: [id], onDelete: Cascade)
+  reportedById  Int
+  project       Project         @relation("ProjectTickets", fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     Int
+  priority      Priority
+  status        Status
+  assignees     User[]          @relation("TicketsAssigned")
+  comments      Comment[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  IssueActivity IssueActivity[]
 
   @@unique([name, projectId])
 }
@@ -71,13 +74,24 @@ model Comment {
   updatedAt DateTime @updatedAt
 }
 
+model IssueActivity {
+  id        Int          @id @default(autoincrement())
+  text      String
+  type      ActivityType
+  ticket    Ticket       @relation(fields: [ticketId], references: [id])
+  ticketId  Int
+  author    User         @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
 enum Provider {
   GOOGLE
   LOCAL
 }
 
 enum Priority {
-  URGENT
   HIGH
   NORMAL
   LOW
@@ -87,7 +101,22 @@ enum Status {
   OPEN
   ASSIGNED
   IN_PROGRESS
-  DONE
-  CANCELLED
   CLOSED
+}
+
+enum ActivityType {
+  CREATED
+  UPDATED
+  CLOSED
+  REOPENED
+  ASSIGNED
+  UNASSIGNED
+  COMMENTED
+  DELETED
+}
+
+enum Role {
+  ADMIN
+  PROJECT_OWNER
+  EMPLOYEE
 }
