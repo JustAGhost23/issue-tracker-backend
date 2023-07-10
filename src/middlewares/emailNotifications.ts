@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import { redisClient } from "../config/db.js";
 import { hashPassword } from "../utils/password.js";
 import crypto from "crypto";
+import { Ticket } from "@prisma/client";
 
 const config = {
   service: "gmail",
@@ -103,12 +104,12 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
     });
 };
 
-export const sendTicketAssignedEmail = async (req: Request, res: Response) => {
-  const frontendLink = `http://${req.headers.host}`;
+export const sendTicketAssignedEmail = async (ticket: Ticket, assignedEmailIds: string[]) => {
+  const frontendLink = `http://localhost:3000`;
 
   const msg = {
     from: "issuetracker@gmail.com",
-    to: req.body.userEmails,
+    to: assignedEmailIds,
     subject: "Ticket Assigned",
     html: `You have been assigned a ticket, please click on this <a href="${frontendLink}">link</a> to go to the website`,
   };
@@ -120,8 +121,25 @@ export const sendTicketAssignedEmail = async (req: Request, res: Response) => {
     })
     .catch((err) => {
       console.log(err);
-      return res.status(500).send({
-        error: "Something went wrong while sending password recovery email",
-      });
+      throw Error("Something went wrong while sending ticked assigned email");
+    });
+};
+
+export const sendTicketUnassignedEmail = async (ticket: Ticket, assignedEmailId: string) => {
+    const msg = {
+        from: "issuetracker@gmail.com",
+        to: assignedEmailId,
+        subject: "Ticket Unassigned",
+        html: `You have been unassigned from the ticket ${ticket.name}.`,
+    };
+
+    transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticket unassigned email");
     });
 };

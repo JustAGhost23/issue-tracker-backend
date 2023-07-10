@@ -3,6 +3,8 @@ import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendTicketUnassignedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const unassignTicketSchema = z.object({
@@ -55,19 +57,11 @@ export const unassignTicketValidator: RequestHandler =
 
 export const unassignTicket = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
+    const user = (await getCurrentUser(reqUser)) as User;
     if (!user) {
-      return res.status(404).send({ error: "User not found" });
+      return res.status(400).send({ error: "Invalid user credentials" });
     }
 
     // Check if user to be unassigned exists
@@ -204,6 +198,8 @@ export const unassignTicket = async (req: Request, res: Response) => {
         number: true,
       },
     });
+
+    await sendTicketUnassignedEmail(updateTicket, unassignedUser.email);
 
     // Ticket unassigned successfully
     return res.status(200).send({

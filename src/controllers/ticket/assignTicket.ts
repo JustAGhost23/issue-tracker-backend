@@ -1,9 +1,10 @@
-import { User } from "@prisma/client";
+import { User, Ticket } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 import { sendTicketAssignedEmail } from "../../middlewares/emailNotifications.js";
+import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
 const assignTicketSchema = z.object({
@@ -32,13 +33,17 @@ const assignTicketSchema = z.object({
       .int({
         message: "invalid projectId",
       }),
-    userEmails: z
-      .string({
-        invalid_type_error: "Email is not a string",
-        required_error: "Emails are required",
+    userIds: z.coerce
+      .number({
+        invalid_type_error: "userIds not a number",
+        required_error: "userIds is a required path parameter",
       })
-      .email({ message: "Must be valid email IDs" })
-      .min(0, { message: "Emails must be non empty strings" })
+      .positive({
+        message: "invalid userId",
+      })
+      .int({
+        message: "invalid userId",
+      })
       .array(),
   }),
 });
@@ -53,19 +58,11 @@ export const assignTicketValidator: RequestHandler =
 
 export const assignTicket = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
+    const user = (await getCurrentUser(reqUser)) as User;
     if (!user) {
-      return res.status(404).send({ error: "User not found" });
+      return res.status(400).send({ error: "Invalid user credentials" });
     }
 
     // Check if project exists
@@ -77,7 +74,7 @@ export const assignTicket = async (req: Request, res: Response) => {
         id: true,
         members: {
           select: {
-            email: true,
+            id: true,
           },
         },
       },
@@ -89,7 +86,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     // Check if user is a member of the project
     if (
       !project.members.some((element) => {
-        if (element.email == user.email) {
+        if (element.id == user.id) {
           return true;
         }
         return false;
@@ -101,7 +98,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     }
 
     // Check if ticket exists
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.ticket.findUnique({
       where: {
         id: parseInt(req.params.ticketId),
       },
@@ -109,6 +106,7 @@ export const assignTicket = async (req: Request, res: Response) => {
         id: true,
         assignees: {
           select: {
+            id: true,
             email: true,
           },
         },
@@ -118,12 +116,45 @@ export const assignTicket = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    const assignedEmailIds = req.body.userEmails;
+    // Get all users to be assigned
+    const users = await prisma.user.findMany({
+      where: {
+        id: req.body.userIds,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
 
-    const assignedEmailIdsToAssign: string[] = assignedEmailIds.filter(
-      (emailId: string) =>
-        !ticket?.assignees.some((assignedUser) => assignedUser.email === emailId)
+    // Check if all users to be assigned are members of the project
+    users.forEach((currUser) => {
+      if (
+        !project.members.some((element) => {
+          if (element.id == currUser.id) {
+            return true;
+          }
+          return false;
+        })
+      ) {
+        return res
+          .status(400)
+          .send({ error: "User to be assigned is not a member of the project" });
+      }
+    });
+
+    const assignedUserIds = req.body.userIds;
+
+    const assignedUserIdsToAssign: number[] = assignedUserIds.filter(
+      (userId: number) =>
+        !ticket?.assignees.some((assignedUser) => assignedUser.id === userId)
     );
+
+    const assignedEmailIds = users
+      .filter((assignedUser) =>
+        assignedUserIdsToAssign.includes(assignedUser.id)
+      )
+      .map((assignedUser) => assignedUser.email);
 
     // Assign users to ticket
     const updateTicket = await prisma.ticket.update({
@@ -133,7 +164,7 @@ export const assignTicket = async (req: Request, res: Response) => {
       data: {
         assignees: {
           connect:
-            assignedEmailIdsToAssign.map((emailId) => ({ email: emailId })) || [],
+            assignedUserIdsToAssign.map((userId) => ({ id: userId })) || [],
         },
       },
     });
@@ -185,7 +216,7 @@ export const assignTicket = async (req: Request, res: Response) => {
       },
     });
 
-    await sendTicketAssignedEmail(req, res);
+    await sendTicketAssignedEmail(updateTicket, assignedEmailIds);
 
     // Ticket assigned successfully
     return res.status(200).send({
