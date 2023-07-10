@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -8,10 +8,20 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../../middlewares/generateToken.js";
+import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
-const editCurrentUserSchema = z.object({
+const editUserSchema = z.object({
   body: z.object({
+    params: z.object({
+      username: z
+        .string({
+          invalid_type_error: "Username is not a string",
+          required_error: "Username is required",
+        })
+        .min(8, { message: "Must be at least 8 characters long" })
+        .max(20, { message: "Must be at most 20 characters long" }),
+    }),
     username: z
       .string({
         invalid_type_error: "Username is not a string",
@@ -40,60 +50,73 @@ const editCurrentUserSchema = z.object({
 });
 
 /**
- @route POST /api/user/edit
+ @route POST /api/user/:username/edit
  @type Request Handler
  */
 
 // Function to validate request using zod schema
-export const editCurrentUserValidator: RequestHandler = validate(
-  editCurrentUserSchema
-);
+export const editUserValidator: RequestHandler = validate(editUserSchema);
 
-export const editCurrentUser = async (req: Request, res: Response) => {
+export const editUser = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
+
+    const updateUser = await prisma.user.findUnique({
       where: {
-        id: reqUser.id,
+        username: req.params.username,
       },
     });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    if (!updateUser) {
+      return res.status(404).send({ error: "User to be updated not found" });
+    }
+
+    if (user.role !== Role.ADMIN) {
+      if (user.id !== updateUser.id) {
+        return res.status(400).send({
+          error:
+            "You cannot edit other users as you do not have the admin role",
+        });
+      }
+
+      if (req.body.password) {
+        const hashed = await hashPassword(req.body.password);
+        updateUser.password = hashed;
+      }
+    } else {
+      if (req.body.password) {
+        return res
+          .status(400)
+          .send({ error: "Cannot edit other users passwords" });
+      }
     }
 
     if (req.body.username) {
-      if (req.body.username != user.username) {
+      if (req.body.username != updateUser.username) {
         // Check if username is already in use
-        if (req.body.username) {
-          const foundUser = await prisma.user.findFirst({
-            where: {
-              username: req.body.username,
-            },
+        const foundUser = await prisma.user.findFirst({
+          where: {
+            username: req.body.username,
+          },
+        });
+        if (foundUser) {
+          return res.status(409).send({
+            error: "Another account with this username already exists",
           });
-          if (foundUser) {
-            return res.status(409).send({
-              error: "Another account with this username already exists",
-            });
-          }
         }
       }
     }
 
     // Update user details
     if (req.body.name) {
-      user.name = req.body.name;
+      updateUser.name = req.body.name;
     }
     if (req.body.username) {
-      user.username = req.body.username;
-    }
-    if (req.body.password) {
-      const hashed = await hashPassword(req.body.password);
-      user.password = hashed;
+      updateUser.username = req.body.username;
     }
 
     const newUser = await prisma.user.update({
@@ -144,27 +167,31 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       return res.status(500).send({ error: "Error while editing user" });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    if (user.id != newUser.id) {
+      res.status(200).send({ message: "Edited user successfully" });
+    } else {
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
 
-    res
-      .status(200)
-      .clearCookie("jwt")
-      .clearCookie("refresh")
-      .cookie("jwt", accessToken, {
-        maxAge: 30 * 60 * 1000,
-        httpOnly: true,
-      })
-      .cookie("refresh", refreshToken, {
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-      })
-      .send({
-        data: {
-          newUser,
-        },
-        message: "Edited user successfully",
-      });
+      res
+        .status(200)
+        .clearCookie("jwt")
+        .clearCookie("refresh")
+        .cookie("jwt", accessToken, {
+          maxAge: 30 * 60 * 1000,
+          httpOnly: true,
+        })
+        .cookie("refresh", refreshToken, {
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+        })
+        .send({
+          data: {
+            newUser,
+          },
+          message: "Edited user successfully",
+        });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

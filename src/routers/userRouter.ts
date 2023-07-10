@@ -5,14 +5,14 @@ import {
   getAllUsers,
 } from "../controllers/user/getAllUsers.js";
 import {
-  editCurrentUserValidator,
-  editCurrentUser,
-} from "../controllers/user/editCurrentUser.js";
+  editUserValidator,
+  editUser,
+} from "../controllers/user/editUser.js";
 import {
   getUserByUsernameValidator,
   getUserByUsername,
 } from "../controllers/user/getUserByUsername.js";
-import { deleteCurrentUser } from "../controllers/user/deleteCurrentUser.js";
+import { deleteUser } from "../controllers/user/deleteUser.js";
 import {
   getUserProjects,
   getUserProjectsValidator,
@@ -41,10 +41,10 @@ userRouter.get("/", passportJWT, getAllUsersValidator, getAllUsers);
  @desc Edit current user details
  */
 userRouter.post(
-  "/edit",
+  "/:username/edit",
   passportJWT,
-  editCurrentUserValidator,
-  editCurrentUser
+  editUserValidator,
+  editUser
 );
 
 /**
@@ -92,9 +92,9 @@ userRouter.get(
 );
 
 /**
- @route /api/user/delete
+ @route /api/user/:username/delete
  @desc Delete current user
  */
-userRouter.post("/delete", passportJWT, deleteCurrentUser);
+userRouter.post("/:username/delete", passportJWT, deleteUser);
 
 export default userRouter;
