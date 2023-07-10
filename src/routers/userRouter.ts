@@ -4,15 +4,15 @@ import {
   getAllUsersValidator,
   getAllUsers,
 } from "../controllers/user/getAllUsers.js";
-import {
-  editUserValidator,
-  editUser,
-} from "../controllers/user/editUser.js";
+import { editUserValidator, editUser } from "../controllers/user/editUser.js";
 import {
   getUserByUsernameValidator,
   getUserByUsername,
 } from "../controllers/user/getUserByUsername.js";
-import { deleteUser } from "../controllers/user/deleteUser.js";
+import {
+  deleteUser,
+  deleteUserValidator,
+} from "../controllers/user/deleteUser.js";
 import {
   getUserProjects,
   getUserProjectsValidator,
@@ -37,15 +37,10 @@ const userRouter: Router = Router();
 userRouter.get("/", passportJWT, getAllUsersValidator, getAllUsers);
 
 /**
- @route /api/user/edit
- @desc Edit current user details
+ @route /api/user/:username/edit
+ @desc Edit user details
  */
-userRouter.post(
-  "/:username/edit",
-  passportJWT,
-  editUserValidator,
-  editUser
-);
+userRouter.post("/:username/edit", passportJWT, editUserValidator, editUser);
 
 /**
  @route /api/user/:username
@@ -93,8 +88,13 @@ userRouter.get(
 
 /**
  @route /api/user/:username/delete
- @desc Delete current user
+ @desc Delete user
  */
-userRouter.post("/:username/delete", passportJWT, deleteUser);
+userRouter.post(
+  "/:username/delete",
+  passportJWT,
+  deleteUserValidator,
+  deleteUser
+);
 
 export default userRouter;
