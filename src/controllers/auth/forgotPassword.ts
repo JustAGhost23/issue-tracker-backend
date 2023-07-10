@@ -40,12 +40,16 @@ export const forgotPassword = async (req: Request, res: Response) => {
         .send({ error: "Account with this email does not exist" });
     }
 
-    await sendForgotPasswordEmail(req, res);
+    try {
+      await sendForgotPasswordEmail(user);
 
-    // Email sent successfully
-    res.status(200).send({
-      message: "Email sent successfully.",
-    });
+      // Email sent successfully
+      return res.status(200).send({
+        message: "Email sent successfully.",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

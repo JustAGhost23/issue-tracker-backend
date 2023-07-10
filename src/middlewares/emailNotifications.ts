@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { redisClient } from "../config/db.js";
 import { hashPassword } from "../utils/password.js";
 import crypto from "crypto";
-import { Project, Ticket } from "@prisma/client";
+import { Project, Ticket, User } from "@prisma/client";
 
 const config = {
   service: "gmail",
@@ -61,13 +61,13 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
     });
 };
 
-export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
+export const sendForgotPasswordEmail = async (user: User) => {
   // Create new password reset token
   const token = crypto.randomBytes(16).toString("hex");
   const newToken = await redisClient.set(
     token,
     JSON.stringify({
-      email: req.body.email,
+      email: user.email,
       type: Token.PASSWORD,
     }),
     {
@@ -75,18 +75,16 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
     }
   );
   if (!newToken) {
-    return res.status(500).send({
-      error: "Something went wrong while creating token",
-    });
+    throw Error("Something went wrong while creating token");
   }
 
   // Create and send password reset email to the user
   // Edit this link to link it to the frontend
-  const verificationLink = `http://${req.headers.host}/api/auth/reset-password?token=${token}`;
+  const verificationLink = `http://localhost:3000/api/auth/reset-password?token=${token}`;
 
   const msg = {
     from: "issuetracker@gmail.com",
-    to: req.body.email,
+    to: user.email,
     subject: "Password Reset",
     html: `Please click on this <a href="${verificationLink}">link</a> to reset your password. Link is valid for 7 days`,
   };
@@ -98,13 +96,15 @@ export const sendForgotPasswordEmail = async (req: Request, res: Response) => {
     })
     .catch((err) => {
       console.log(err);
-      return res.status(500).send({
-        error: "Something went wrong while sending password recovery email",
-      });
+      throw Error("Something went wrong while sending password recovery email");
     });
 };
 
-export const sendTicketAssignedEmail = async (project: Project, ticket: Ticket, assignedEmailIds: string[]) => {
+export const sendTicketAssignedEmail = async (
+  project: Project,
+  ticket: Ticket,
+  assignedEmailIds: string[]
+) => {
   const frontendLink = `http://localhost:3000`;
 
   const msg = {
@@ -125,18 +125,23 @@ export const sendTicketAssignedEmail = async (project: Project, ticket: Ticket, 
     });
 };
 
-export const sendTicketUnassignedEmail = async (project: Project, ticket: Ticket, assignedEmailId: string) => {
-    const msg = {
-        from: "issuetracker@gmail.com",
-        to: assignedEmailId,
-        subject: "Ticket Unassigned",
-        html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
-    };
+export const sendTicketUnassignedEmail = async (
+  project: Project,
+  ticket: Ticket,
+  assignedEmailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: assignedEmailId,
+    subject: "Ticket Unassigned",
+    html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
+  };
 
-    transporter
+  transporter
     .sendMail(msg)
     .then(() => {
       console.log("Email sent successfully");
+      return true;
     })
     .catch((err) => {
       console.log(err);

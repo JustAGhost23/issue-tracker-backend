@@ -60,7 +60,7 @@ export const assignTicket = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
-    const user = (await getCurrentUser(reqUser));
+    const user = await getCurrentUser(reqUser);
     if (user instanceof Error) {
       return res.status(400).send({ error: user.message });
     }
@@ -135,9 +135,9 @@ export const assignTicket = async (req: Request, res: Response) => {
           return false;
         })
       ) {
-        return res
-          .status(400)
-          .send({ error: "User to be assigned is not a member of the project" });
+        return res.status(400).send({
+          error: "User to be assigned is not a member of the project",
+        });
       }
     });
 
@@ -214,15 +214,19 @@ export const assignTicket = async (req: Request, res: Response) => {
       },
     });
 
-    await sendTicketAssignedEmail(project, updateTicket, assignedEmailIds);
+    try {
+      await sendTicketAssignedEmail(project, updateTicket, assignedEmailIds);
 
-    // Ticket assigned successfully
-    return res.status(200).send({
-      data: {
-        newTicket,
-      },
-      message: "Ticket assigned to assignees successfully",
-    });
+      // Email sent successfully
+      return res.status(200).send({
+        data: {
+          newTicket,
+        },
+        message: "Ticket assigned to assignees successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

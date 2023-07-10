@@ -59,7 +59,7 @@ export const unassignTicket = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
-    const user = (await getCurrentUser(reqUser));
+    const user = await getCurrentUser(reqUser);
     if (user instanceof Error) {
       return res.status(400).send({ error: user.message });
     }
@@ -197,15 +197,23 @@ export const unassignTicket = async (req: Request, res: Response) => {
       },
     });
 
-    await sendTicketUnassignedEmail(project, updateTicket, unassignedUser.email);
+    try {
+      await sendTicketUnassignedEmail(
+        project,
+        updateTicket,
+        unassignedUser.email
+      );
 
-    // Ticket unassigned successfully
-    return res.status(200).send({
-      data: {
-        newTicket,
-      },
-      message: "Ticket unassigned successfully",
-    });
+      // Email sent successfully
+      return res.status(200).send({
+        data: {
+          newTicket,
+        },
+        message: "Ticket unassigned successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({
