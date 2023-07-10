@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { generateUserToken } from "../middlewares/generateToken.js";
+import { generateTokens } from "../middlewares/generateToken.js";
 import passport from "../middlewares/passportAuth.js";
 import { registerValidator, register } from "../controllers/auth/register.js";
 import { loginValidator, login } from "../controllers/auth/login.js";
@@ -28,14 +28,14 @@ const authRouter: Router = Router();
  @route /api/auth/google
  @desc Login using Google Account
  */
-authRouter.post(
+authRouter.get(
   "/google",
   passport.authenticate("google", {
     session: false,
     scope: ["profile", "email"],
   })
 );
-authRouter.get("/google/callback", passportGoogle, generateUserToken);
+authRouter.get("/google/callback", passportGoogle, generateTokens);
 
 /**
  @route /api/auth/register

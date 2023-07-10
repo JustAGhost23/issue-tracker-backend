@@ -4,7 +4,10 @@ import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { hashPassword } from "../../utils/password.js";
 import { z } from "zod";
-import jwt from "jsonwebtoken";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../../middlewares/generateToken.js";
 
 // Zod schema to validate request
 const editCurrentUserSchema = z.object({
@@ -141,27 +144,26 @@ export const editCurrentUser = async (req: Request, res: Response) => {
       return res.status(500).send({ error: "Error while editing user" });
     }
 
-    // Create JWT Token
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        username: user.username,
-        email: user.email,
-      },
-      process.env.TOKEN_SECRET!,
-      { expiresIn: "30m" }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    // Send new JWT token
     res
       .status(200)
       .clearCookie("jwt")
-      .cookie("jwt", token, { maxAge: 30 * 60 * 1000, httpOnly: true })
+      .clearCookie("refresh")
+      .cookie("jwt", accessToken, {
+        maxAge: 30 * 60 * 1000,
+        httpOnly: true,
+      })
+      .cookie("refresh", refreshToken, {
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      })
       .send({
         data: {
           newUser,
         },
-        message: "Edited user and updated JWT successfully",
+        message: "Edited user successfully",
       });
   } catch (err) {
     console.log(err);

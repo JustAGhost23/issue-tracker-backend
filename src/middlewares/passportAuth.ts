@@ -3,8 +3,11 @@ import { Strategy as JwtStrategy } from "passport-jwt";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { prisma } from "../config/db.js";
 import { Provider, Role } from "@prisma/client";
-import { cookieExtractor } from "../utils/cookieExtractor.js";
 import { JwtPayload } from "jsonwebtoken";
+import {
+  accessTokenExtractor,
+  refreshTokenExtractor,
+} from "../utils/tokenExtractor.js";
 import crypto from "crypto";
 
 const JwtAuthCallback = async (jwt_payload: JwtPayload, done: any) => {
@@ -26,10 +29,36 @@ passport.use(
   "jwt",
   new JwtStrategy(
     {
-      jwtFromRequest: cookieExtractor,
+      jwtFromRequest: accessTokenExtractor,
       secretOrKey: process.env.TOKEN_SECRET,
     },
     JwtAuthCallback
+  )
+);
+
+const RefreshAuthCallback = async (jwt_payload: JwtPayload, done: any) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(jwt_payload.sub ?? "0") },
+    });
+    if (!user) {
+      return done(null, false);
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err, false);
+  }
+};
+
+passport.use(
+  "refresh",
+  new JwtStrategy(
+    {
+      jwtFromRequest: refreshTokenExtractor,
+      secretOrKey: process.env.REFRESH_TOKEN_SECRET,
+    },
+    RefreshAuthCallback
   )
 );
 

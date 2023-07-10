@@ -9,5 +9,6 @@ export const logout: RequestHandler = async (req: Request, res: Response) => {
   res
     .status(200)
     .clearCookie("jwt")
+    .clearCookie("refresh")
     .send({ message: "Logged out successfully" });
 };

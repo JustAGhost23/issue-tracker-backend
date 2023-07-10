@@ -4,7 +4,10 @@ import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { verifyPassword } from "../../utils/password.js";
 import { z } from "zod";
-import jwt from "jsonwebtoken";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../../middlewares/generateToken.js";
 
 // Zod schema to validate request
 const loginUserSchema = z.object({
@@ -105,26 +108,24 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    // Create new authentication token
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        username: user.username,
-        email: user.email,
-      },
-      process.env.TOKEN_SECRET!,
-      { expiresIn: "30m" }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    // User logged in successfully
-    res
-      .status(200)
-      .cookie("jwt", token, { maxAge: 30 * 60 * 1000, httpOnly: true })
-      .send({
-        data: {
-          newUser,
-        },
-      });
+    res.status(200)
+    .cookie("jwt", accessToken, {
+      maxAge: 30 * 60 * 1000,
+      httpOnly: true,
+    })
+    .cookie("refresh", refreshToken, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+    })
+    .send({
+      data: {
+        newUser,
+      },
+      message: "Logged in successfully",
+    });
   } catch (err) {
     res.status(500).send({
       error: "Something went wrong while logging in",
