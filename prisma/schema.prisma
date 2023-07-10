@@ -27,6 +27,7 @@ model User {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   IssueActivity   IssueActivity[]
+  Requests        Requests[]
 }
 
 model Project {
@@ -84,6 +85,15 @@ model IssueActivity {
   authorId  Int
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+}
+
+model Requests {
+  id        Int      @id @default(autoincrement())
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Provider {

@@ -47,6 +47,9 @@
   "devDependencies": {
     "typescript": "^5.1.6"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "overrides": {
     "semver": "^7.5.3"
   }

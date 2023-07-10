@@ -43,7 +43,7 @@ export const login = async (req: Request, res: Response) => {
         .status(404)
         .send({ error: "Account with this email does not exist" });
     }
-    
+
     // Check if correct auth method is used
     if (!user.password || !user.provider.includes(Provider.LOCAL)) {
       return res.status(404).send({
@@ -52,9 +52,58 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Verify password
-    const validPassword = await verifyPassword(req.body.password, user.password);
-    if (!validPassword)
+    const validPassword = await verifyPassword(
+      req.body.password,
+      user.password
+    );
+    if (!validPassword) {
       return res.status(403).send({ error: "Incorrect password" });
+    }
+
+    const newUser = await prisma.user.findUnique({
+      where: {
+        email: user.email,
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        provider: true,
+        role: true,
+        projectsOwned: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        ticketsCreated: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        ticketsAssigned: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        comments: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     // Create new authentication token
     const token = jwt.sign(
@@ -73,11 +122,7 @@ export const login = async (req: Request, res: Response) => {
       .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
       .send({
         data: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          name: user.name,
-          provider: user.provider,
+          newUser,
         },
       });
   } catch (err) {

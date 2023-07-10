@@ -1,4 +1,4 @@
-import { User, Provider } from "@prisma/client";
+import { User, Provider, Role } from "@prisma/client";
 import { Token } from "../../utils/enums.js";
 import { prisma, redisClient } from "../../config/db.js";
 import { RequestHandler, Request, Response } from "express";
@@ -77,6 +77,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
         name: tokenDetails.name,
         password: tokenDetails.password,
         provider: [Provider.LOCAL],
+        role: Role.EMPLOYEE
       },
     });
 

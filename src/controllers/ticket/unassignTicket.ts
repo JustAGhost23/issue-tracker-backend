@@ -61,7 +61,7 @@ export const unassignTicket = async (req: Request, res: Response) => {
     const reqUser = req.user as User;
     const user = (await getCurrentUser(reqUser));
     if (user instanceof Error) {
-      return res.status(400).send({ error: "Invalid user credentials" });
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if user to be unassigned exists

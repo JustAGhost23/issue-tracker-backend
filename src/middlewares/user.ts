@@ -4,7 +4,7 @@ import { prisma } from "../config/db.js";
 
 export const getCurrentUser = async (reqUser: User | null) => {
   if (!reqUser) {
-    throw Error();
+    throw Error("Invalid user");
   }
   // Check if user exists
   const user = await prisma.user.findUnique({
