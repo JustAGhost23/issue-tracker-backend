@@ -4,7 +4,7 @@ import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 
 // Zod schema to validate request
-const getAllUsersSchema = z.object({
+const getAllRequestsSchema = z.object({
   query: z.object({
     items: z.coerce
       .number({
@@ -28,28 +28,23 @@ const getAllUsersSchema = z.object({
         message: "Page number must be an integer",
       })
       .optional(),
-    keyword: z
-      .string({
-        invalid_type_error: "Keyword must be of type string",
-      })
-      .optional(),
   }),
 });
 
 /**
- @route GET /api/user/
+ @route GET /api/role/
  @type Request Handler
  */
 
 // Function to validate request using zod schema
-export const getAllUsersValidator: RequestHandler = validate(getAllUsersSchema);
+export const getAllRequestsValidator: RequestHandler =
+  validate(getAllRequestsSchema);
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllRequests = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
     const maxItems = parseInt((req.query.items as string) ?? "10");
     const page = parseInt((req.query.page as string) ?? "1") - 1;
-    const keyword = (req.query.keyword as string) ?? "";
 
     // Add checks for page number and items
     if (page < 0) {
@@ -59,76 +54,38 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
-    // Get list of users
+    // Get list of requests
     try {
-      const users = await prisma.user.findMany({
+      const requests = await prisma.requests.findMany({
         skip: maxItems * page,
         take: maxItems,
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
-          },
-        },
         select: {
           id: true,
-          username: true,
-          name: true,
-          email: true,
-          provider: true,
+          author: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+              provider: true,
+              role: true,
+            },
+          },
           role: true,
-          projectsOwned: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-          projects: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-          ticketsCreated: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-          ticketsAssigned: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-          comments: true,
           createdAt: true,
           updatedAt: true,
         },
       });
 
-      // Get total count of list of users
-      const totalCount = await prisma.user.count({
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
-          },
-        },
-      });
+      // Get total count of list of requests
+      const totalCount = await prisma.requests.count({});
 
-      if (!users) {
-        return res.status(404).send({ error: "No users found!" });
+      if (!requests) {
+        return res.status(404).send({ error: "No requests found!" });
       }
-
-      // Send list of users
       res.status(200).send({
         totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: users,
+        data: requests,
       });
     } catch (err) {
       console.log(err);
@@ -139,7 +96,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting users",
+      error: "Something went wrong while getting requests",
     });
   }
 };

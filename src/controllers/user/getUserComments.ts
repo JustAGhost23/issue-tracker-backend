@@ -58,7 +58,6 @@ export const getUserCommentsValidator: RequestHandler = validate(
 export const getUserComments = async (req: Request, res: Response) => {
   try {
     // Implement Cursor based pagination after MVP.
-    // Figure out how to implement fuzzy search properly.
     const maxItems = parseInt((req.query.items as string) ?? "10");
     const page = parseInt((req.query.page as string) ?? "1") - 1;
     const keyword = (req.query.keyword as string) ?? "";
