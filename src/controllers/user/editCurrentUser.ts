@@ -149,14 +149,14 @@ export const editCurrentUser = async (req: Request, res: Response) => {
         email: user.email,
       },
       process.env.TOKEN_SECRET!,
-      { expiresIn: "12h" }
+      { expiresIn: "30m" }
     );
 
     // Send new JWT token
     res
       .status(200)
       .clearCookie("jwt")
-      .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
+      .cookie("jwt", token, { maxAge: 30 * 60 * 1000, httpOnly: true })
       .send({
         data: {
           newUser,

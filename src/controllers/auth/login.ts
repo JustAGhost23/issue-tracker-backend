@@ -113,13 +113,13 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
       },
       process.env.TOKEN_SECRET!,
-      { expiresIn: "12h" }
+      { expiresIn: "30m" }
     );
 
     // User logged in successfully
     res
       .status(200)
-      .cookie("jwt", token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true })
+      .cookie("jwt", token, { maxAge: 30 * 60 * 1000, httpOnly: true })
       .send({
         data: {
           newUser,
