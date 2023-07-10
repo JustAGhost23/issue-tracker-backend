@@ -59,8 +59,8 @@ export const unassignTicket = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
-    const user = (await getCurrentUser(reqUser)) as User;
-    if (!user) {
+    const user = (await getCurrentUser(reqUser));
+    if (user instanceof Error) {
       return res.status(400).send({ error: "Invalid user credentials" });
     }
 

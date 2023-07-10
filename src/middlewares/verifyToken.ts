@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import { redisClient } from "../config/db.js";
 import jwt from "jsonwebtoken";
 
-module.exports = function (req: Request, res: Response, next: NextFunction) {
+module.exports = async function (req: Request, res: Response, next: NextFunction) {
   const header = req.headers["authorization"];
 
   if (typeof header !== "undefined") {
@@ -13,6 +14,12 @@ module.exports = function (req: Request, res: Response, next: NextFunction) {
       return res
         .status(401)
         .send({ error: "Access denied. No token provided" });
+    const inDenyList = await redisClient.get(`bl_${token[1]}`);
+    if (inDenyList) {
+      return res.status(401).send({
+        message: "Token blacklisted",
+      });
+    }
 
     try {
       const decodedToken = jwt.verify(token[1], process.env.TOKEN_SECRET!);

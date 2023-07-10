@@ -1,4 +1,5 @@
-import { User } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import { User, Role } from "@prisma/client";
 import { prisma } from "../config/db.js";
 
 export const getCurrentUser = async (reqUser: User | null) => {
@@ -16,6 +17,7 @@ export const getCurrentUser = async (reqUser: User | null) => {
       name: true,
       email: true,
       provider: true,
+      role: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -25,3 +27,20 @@ export const getCurrentUser = async (reqUser: User | null) => {
   }
   return user;
 };
+
+export const authorize =
+  (...permittedRoles: Role[]) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    const reqUser = req.user as User;
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: "Invalid user" });
+    }
+    if (user.role && permittedRoles.includes(user.role)) {
+      next();
+    } else {
+      return res
+        .status(403)
+        .send({ error: "You are not authorised to access this resource" });
+    }
+  };
