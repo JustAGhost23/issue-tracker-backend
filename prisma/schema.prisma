@@ -90,7 +90,7 @@ model IssueActivity {
 model Requests {
   id        Int      @id @default(autoincrement())
   author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
+  authorId  Int      @unique
   role      Role
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

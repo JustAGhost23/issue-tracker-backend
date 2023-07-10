@@ -1,4 +1,4 @@
-import { Role, User } from "@prisma/client";
+import { User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
-const requestRoleChangeSchema = z.object({
+const deleteRequestSchema = z.object({
   body: z.object({
     userId: z.coerce
       .number({
@@ -19,20 +19,18 @@ const requestRoleChangeSchema = z.object({
       .int({
         message: "invalid userId",
       }),
-    role: z.nativeEnum(Role),
   }),
 });
 
 /**
- @route POST /api/role/request
+ @route /api/role/request/delete
  @type RequestHandler
  */
 
-export const requestRoleChangeValidator: RequestHandler = validate(
-  requestRoleChangeSchema
-);
+export const deleteRequestValidator: RequestHandler =
+  validate(deleteRequestSchema);
 
-export const requestRoleChange = async (req: Request, res: Response) => {
+export const deleteRequest = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
@@ -41,45 +39,40 @@ export const requestRoleChange = async (req: Request, res: Response) => {
       return res.status(400).send({ error: user.message });
     }
 
-    // Check if user has the same role as the one requested to be changed to
-    if (req.body.role == user.role) {
-      res.status(400).send({ error: "User already has this role" });
-    }
-
     // Check if there is an existing request
     const request = await prisma.requests.findUnique({
       where: {
         authorId: req.body.userId,
       },
     });
-    if (request) {
+    if (!request) {
       return res
         .status(400)
-        .send({ error: "You have already requested a role change earlier" });
+        .send({ error: "No request exists associated with this user" });
     }
 
-    // Add request
-    const newRequest = await prisma.requests.create({
-      data: {
-        author: {
-          connect: {
-            id: user.id,
-          },
-        },
-        role: req.body.role,
+    // Check if current user and user whose request is to be deleted are the same
+    if (user.id != request.authorId) {
+      return res.status(400).send({ error: "User did not make this request" });
+    }
+
+    // Delete request
+    const deleteRequest = await prisma.requests.delete({
+      where: {
+        authorId: user.id,
       },
     });
-    if (!newRequest) {
-      return res
-        .status(500)
-        .send({ error: "Something went wrong while requesting role change" });
+    if (!deleteRequest) {
+      return res.status(500).send({
+        error: "Something went wrong while deleting role change request",
+      });
     }
 
-    return res.status(200).send({ message: "Request sent successfully" });
+    return res.status(200).send({ message: "Request deleted successfully" });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while requesting role change",
+      error: "Something went wrong while deleting role change request",
     });
   }
 };
