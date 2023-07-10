@@ -16,8 +16,10 @@ import {
   resetPassword,
   resetPasswordValidator,
 } from "../controllers/auth/resetPassword.js";
+import { refreshAccessToken } from "../controllers/auth/refreshAccessToken.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
+const passportRefresh = passport.authenticate("refresh", { session: false });
 const passportGoogle = passport.authenticate("google", {
   session: false,
 });
@@ -72,5 +74,11 @@ authRouter.post("/forgot", forgotPasswordValidator, forgotPassword);
  @desc Reset Password Verification
  */
 authRouter.post("/reset-password", resetPasswordValidator, resetPassword);
+
+/**
+ @route /api/auth/refresh
+ @desc Refresh Access Token
+ */
+authRouter.post("/refresh", passportRefresh, refreshAccessToken);
 
 export default authRouter;
