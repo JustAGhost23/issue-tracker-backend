@@ -4,6 +4,7 @@ import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
+import { sendApprovedRoleChangeMail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const approveRoleChangeSchema = z.object({
@@ -91,9 +92,16 @@ export const approveRoleChange = async (req: Request, res: Response) => {
         .send({ error: "Error occured while deleting request" });
     }
 
-    // Add email notif here
+    try {
+      await sendApprovedRoleChangeMail(request, updateUser.email);
 
-    return res.status(200).send({ message: "User role updated successfully" });
+      // Email sent successfully
+      return res.status(200).send({
+        message: "User role updated successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

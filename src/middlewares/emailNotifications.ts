@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { redisClient } from "../config/db.js";
 import { hashPassword } from "../utils/password.js";
 import crypto from "crypto";
-import { Project, Ticket, User } from "@prisma/client";
+import { Project, Requests, Ticket, User } from "@prisma/client";
 
 const config = {
   service: "gmail",
@@ -146,5 +146,48 @@ export const sendTicketUnassignedEmail = async (
     .catch((err) => {
       console.log(err);
       throw Error("Something went wrong while sending ticket unassigned email");
+    });
+};
+
+export const sendApprovedRoleChangeMail = async (request: Requests, assignedEmailId: string) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: assignedEmailId,
+    subject: "Request for role change approved",
+    html: `Your request for your role to be changed to ${request.role} has been approved`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending approved request email");
+    });
+};
+
+export const sendRejectedRoleChangeMail = async (
+  request: Requests,
+  assignedEmailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: assignedEmailId,
+    subject: "Request for role change rejected",
+    html: `Your request for your role to be changed to ${request.role} has been rejected`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending rejected request email");
     });
 };
