@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Role } from "@prisma/client";
 import passport from "../middlewares/passportAuth.js";
 import {
   getAllUsersValidator,
@@ -25,6 +26,11 @@ import {
   getUserComments,
   getUserCommentsValidator,
 } from "../controllers/user/getUserComments.js";
+import {
+  requestRoleChange,
+  requestRoleChangeValidator,
+} from "../controllers/user/requestRoleChange.js";
+import { authorize } from "../middlewares/user.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -89,6 +95,18 @@ userRouter.get(
   passportJWT,
   getUserCommentsValidator,
   getUserComments
+);
+
+/**
+ @route /api/user/request
+ @desc Request for role change
+ */
+userRouter.get(
+  "/request",
+  passportJWT,
+  authorize(Role.EMPLOYEE, Role.PROJECT_OWNER),
+  requestRoleChangeValidator,
+  requestRoleChange
 );
 
 /**
