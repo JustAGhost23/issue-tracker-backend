@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
-const approveRoleChangeSchema = z.object({
+const rejectRoleChangeSchema = z.object({
   body: z.object({
     userId: z.coerce
       .number({
@@ -34,15 +34,15 @@ const approveRoleChangeSchema = z.object({
 });
 
 /**
- @route POST /api/role/request/approve
+ @route POST /api/role/request/reject
  @type RequestHandler
  */
 
-export const approveRoleChangeValidator: RequestHandler = validate(
-  approveRoleChangeSchema
+export const rejectRoleChangeValidator: RequestHandler = validate(
+  rejectRoleChangeSchema
 );
 
-export const approveRoleChange = async (req: Request, res: Response) => {
+export const rejectRoleChange = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
@@ -71,14 +71,6 @@ export const approveRoleChange = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Request not found" });
     }
 
-    updatedUser.role = request.role;
-    const updateUser = await prisma.user.update({
-      where: {
-        id: updatedUser.id,
-      },
-      data: updatedUser,
-    });
-
     // Delete request
     const deleteRequest = await prisma.requests.delete({
       where: {
@@ -93,11 +85,11 @@ export const approveRoleChange = async (req: Request, res: Response) => {
 
     // Add email notif here
 
-    return res.status(200).send({ message: "User role updated successfully" });
+    return res.status(200).send({ message: "User request rejected successfully" });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while updating user roles",
+      error: "Something went wrong while rejecting user request",
     });
   }
 };

@@ -1,9 +1,19 @@
 import { Role } from "@prisma/client";
 import { Router } from "express";
 import passport from "../middlewares/passportAuth.js";
-import { approveRoleChangeValidator, approveRoleChange } from "../controllers/role/approveRoleChange.js";
-import { requestRoleChangeValidator, requestRoleChange } from "../controllers/role/requestRoleChange.js";
+import {
+  approveRoleChangeValidator,
+  approveRoleChange,
+} from "../controllers/role/approveRoleChange.js";
+import {
+  requestRoleChangeValidator,
+  requestRoleChange,
+} from "../controllers/role/requestRoleChange.js";
 import { authorize } from "../middlewares/user.js";
+import {
+  rejectRoleChange,
+  rejectRoleChangeValidator,
+} from "../controllers/role/rejectRoleChange.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -31,6 +41,18 @@ roleRouter.post(
   authorize(Role.ADMIN),
   approveRoleChangeValidator,
   approveRoleChange
+);
+
+/**
+ @route /api/role/request/reject
+ @desc Reject role change
+ */
+roleRouter.post(
+  "/request/reject",
+  passportJWT,
+  authorize(Role.ADMIN),
+  rejectRoleChangeValidator,
+  rejectRoleChange
 );
 
 export default roleRouter;
