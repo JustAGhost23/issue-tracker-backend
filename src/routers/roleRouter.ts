@@ -18,10 +18,26 @@ import {
   deleteRequest,
   deleteRequestValidator,
 } from "../controllers/role/deleteRequest.js";
+import {
+  getAllRequests,
+  getAllRequestsValidator,
+} from "../controllers/role/getAllRequests.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
 const roleRouter: Router = Router();
+
+/**
+ @route /api/role/
+ @desc Get all requests
+ */
+roleRouter.get(
+  "/",
+  passportJWT,
+  authorize(Role.ADMIN),
+  getAllRequestsValidator,
+  getAllRequests
+);
 
 /**
  @route /api/role/request
