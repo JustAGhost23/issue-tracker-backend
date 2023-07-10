@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
-const requestRoleChangeSchema = z.object({
+const approveRoleChangeSchema = z.object({
   body: z.object({
     userId: z.coerce
       .number({
@@ -24,15 +24,15 @@ const requestRoleChangeSchema = z.object({
 });
 
 /**
- @route POST /api/user/request
+ @route POST /api/user/request/approve
  @type RequestHandler
  */
 
-export const requestRoleChangeValidator: RequestHandler = validate(
-  requestRoleChangeSchema
+export const approveRoleChangeValidator: RequestHandler = validate(
+  approveRoleChangeSchema
 );
 
-export const requestRoleChange = async (req: Request, res: Response) => {
+export const approveRoleChange = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
@@ -41,33 +41,31 @@ export const requestRoleChange = async (req: Request, res: Response) => {
       return res.status(400).send({ error: user.message });
     }
 
-    // Check if user has the same role as the one requested to be changed to
-    if (req.body.role == user.role) {
-      res.status(400).send({ error: "User already has this role" });
-    }
-
-    // Add request
-    const request = await prisma.requests.create({
-      data: {
-        author: {
-          connect: {
-            id: user.id,
-          },
-        },
-        role: req.body.role,
+    // Get user whose role is to be updated
+    const updatedUser = await prisma.user.findUnique({
+      where: {
+        id: req.body.userId,
       },
     });
-    if (!request) {
-      return res
-        .status(500)
-        .send({ error: "Something went wrong while requesting role change" });
+    if (!updatedUser) {
+      return res.status(404).send({ error: "User to be updated not found" });
     }
 
-    return res.status(200).send({ message: "Request sent successfully" });
+    updatedUser.role = req.body.role;
+    const updateUser = await prisma.user.update({
+      where: {
+        id: updatedUser.id,
+      },
+      data: updatedUser,
+    });
+
+    // Add email notif here
+
+    return res.status(200).send({ message: "User role updated successfully" });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while requesting role change",
+      error: "Something went wrong while updating user roles",
     });
   }
 };

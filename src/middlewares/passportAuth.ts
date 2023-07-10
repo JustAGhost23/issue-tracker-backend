@@ -2,14 +2,14 @@ import passport from "passport";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { prisma } from "../config/db.js";
-import { Provider } from "@prisma/client";
+import { Provider, Role } from "@prisma/client";
 import { cookieExtractor } from "../utils/cookieExtractor.js";
 import { JwtPayload } from "jsonwebtoken";
 import crypto from "crypto";
 
 const JwtAuthCallback = async (jwt_payload: JwtPayload, done: any) => {
   try {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: { id: parseInt(jwt_payload.sub ?? "0") },
     });
     if (!user) {
@@ -89,6 +89,7 @@ const GoogleAuthCallback = async (
         username: username,
         name: profile.displayName,
         provider: [Provider.GOOGLE],
+        role: Role.EMPLOYEE,
         googleId: profile.id,
       },
     });

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { redisClient } from "../config/db.js";
 import jwt from "jsonwebtoken";
 
-module.exports = async function (req: Request, res: Response, next: NextFunction) {
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   const header = req.headers["authorization"];
 
   if (typeof header !== "undefined") {

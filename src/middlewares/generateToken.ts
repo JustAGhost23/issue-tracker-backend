@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import { User } from "@prisma/client";
 
-export default function generateUserToken(req: Request, res: Response) {
+export const generateUserToken = (req: Request, res: Response) => {
   const user = req.user as User;
 
   // Create JWT Token

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import generateUserToken from "../middlewares/generateToken.js";
+import { generateUserToken } from "../middlewares/generateToken.js";
 import passport from "../middlewares/passportAuth.js";
 import { registerValidator, register } from "../controllers/auth/register.js";
 import { loginValidator, login } from "../controllers/auth/login.js";
