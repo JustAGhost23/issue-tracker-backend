@@ -17,15 +17,15 @@ const getAllRequestsSchema = z.object({
         message: "Number of items must be an integer",
       })
       .optional(),
-    page: z.coerce
+    cursor: z.coerce
       .number({
-        invalid_type_error: "Page number not a number",
+        invalid_type_error: "Cursor not a number",
       })
       .positive({
-        message: "Page number cannot be negative",
+        message: "Cursor cannot be negative",
       })
       .int({
-        message: "Page number must be an integer",
+        message: "Cursor must be an integer",
       })
       .optional(),
   }),
@@ -33,7 +33,7 @@ const getAllRequestsSchema = z.object({
 
 /**
  @route GET /api/role/
- @type Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -42,55 +42,96 @@ export const getAllRequestsValidator: RequestHandler =
 
 export const getAllRequests = async (req: Request, res: Response) => {
   try {
-    // Implement Cursor based pagination after MVP.
+    // Get maxItems
     const maxItems = parseInt((req.query.items as string) ?? "10");
-    const page = parseInt((req.query.page as string) ?? "1") - 1;
-
-    // Add checks for page number and items
-    if (page < 0) {
-      return res.status(400).send({ error: "Invalid page number provided" });
-    }
     if (maxItems < 1) {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
-    // Get list of requests
-    try {
-      const requests = await prisma.requests.findMany({
-        skip: maxItems * page,
-        take: maxItems,
-        select: {
-          id: true,
-          author: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              role: true,
-            },
-          },
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      // Get total count of list of requests
-      const totalCount = await prisma.requests.count({});
-
-      if (!requests) {
-        return res.status(404).send({ error: "No requests found!" });
+    // Check if cursor is valid
+    if (req.query.cursor) {
+      const cursor = parseInt(req.query.cursor as string);
+      if (cursor < 0) {
+        return res.status(400).send({ error: "Invalid cursor provided" });
       }
+    }
+
+    // Get request list
+    try {
+      let requests = null;
+      if (req.query.cursor) {
+        // With cursor
+        requests = await prisma.requests.findMany({
+          take: maxItems,
+          skip: 1,
+          cursor: {
+            id: parseInt(req.query.cursor as string),
+          },
+          select: {
+            id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
+      } else {
+        // Without cursor
+        requests = await prisma.requests.findMany({
+          take: maxItems,
+          select: {
+            id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
+      }
+      if (!requests) {
+        return res.status(404).send({ error: "No requests found" });
+      }
+      // Get cursor parameters
+      const lastRequest = requests[requests.length - 1];
+      const myCursor = lastRequest.id;
+
+      // Send list of requests
       res.status(200).send({
-        totalPages: totalCount / Math.min(maxItems, totalCount),
         data: requests,
+        nextCursor: myCursor,
       });
     } catch (err) {
       console.log(err);
       res.status(500).send({
-        error: "Something went wrong while getting users",
+        error: "Something went wrong while getting requests",
       });
     }
   } catch (err) {

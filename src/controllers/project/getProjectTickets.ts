@@ -80,6 +80,7 @@ export const getProjectTicketsValidator: RequestHandler = validate(
 
 export const getProjectTickets = async (req: Request, res: Response) => {
   try {
+    // Get maxItems and keyword
     const maxItems = parseInt((req.query.items as string) ?? "10");
     const keyword = (req.query.keyword as string) ?? "";
 
@@ -87,6 +88,7 @@ export const getProjectTickets = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
+    // Check if cursor is valid
     if (req.query.cursor) {
       const cursor = parseInt(req.query.cursor as string);
       if (cursor < 0) {
@@ -114,9 +116,11 @@ export const getProjectTickets = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Project not found" });
     }
 
+    // Get ticket list
     try {
       let tickets = null;
       if (req.query.cursor) {
+        // With cursor
         tickets = await prisma.ticket.findMany({
           take: maxItems,
           skip: 1,
@@ -166,6 +170,7 @@ export const getProjectTickets = async (req: Request, res: Response) => {
           },
         });
       } else {
+        // Without cursor
         tickets = await prisma.ticket.findMany({
           take: maxItems,
           where: {
@@ -211,10 +216,10 @@ export const getProjectTickets = async (req: Request, res: Response) => {
           },
         });
       }
-
       if (!tickets) {
         return res.status(404).send({ error: "No projects found" });
       }
+      // Get cursor parameters
       const lastTicket = tickets[tickets.length - 1];
       const myCursor = lastTicket.id;
 

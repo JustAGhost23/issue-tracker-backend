@@ -26,15 +26,15 @@ const getUserProjectsSchema = z.object({
         message: "Number of items must be an integer",
       })
       .optional(),
-    page: z.coerce
+    cursor: z.coerce
       .number({
-        invalid_type_error: "Page number not a number",
+        invalid_type_error: "Cursor not a number",
       })
       .positive({
-        message: "Page number cannot be negative",
+        message: "Cursor cannot be negative",
       })
       .int({
-        message: "Page number must be an integer",
+        message: "Cursor must be an integer",
       })
       .optional(),
     keyword: z
@@ -57,17 +57,20 @@ export const getUserProjectsValidator: RequestHandler = validate(
 
 export const getUserProjects = async (req: Request, res: Response) => {
   try {
-    // Implement Cursor based pagination after MVP.
+    // Get maxItems and keyword
     const maxItems = parseInt((req.query.items as string) ?? "10");
-    const page = parseInt((req.query.page as string) ?? "1") - 1;
     const keyword = (req.query.keyword as string) ?? "";
 
-    // Add checks for page number and items
-    if (page < 0) {
-      return res.status(400).send({ error: "Invalid page number provided" });
-    }
     if (maxItems < 1) {
       return res.status(400).send({ error: "Invalid number of items" });
+    }
+
+    // Check if cursor is valid
+    if (req.query.cursor) {
+      const cursor = parseInt(req.query.cursor as string);
+      if (cursor < 0) {
+        return res.status(400).send({ error: "Invalid cursor provided" });
+      }
     }
 
     // Check if user exists
@@ -80,84 +83,142 @@ export const getUserProjects = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "User not found" });
     }
 
-    // Get list of projects
+    // Get project list
     try {
-      const projects = await prisma.project.findMany({
-        skip: maxItems * page,
-        take: maxItems,
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
+      let projects = null;
+      if (req.query.cursor) {
+        // With cursor
+        projects = await prisma.project.findMany({
+          take: maxItems,
+          skip: 1,
+          cursor: {
+            id: parseInt(req.query.cursor as string),
           },
-          members: {
-            some: {
-              username: req.params.username,
+          where: {
+            name: {
+              contains: keyword,
+              mode: "insensitive",
+            },
+            members: {
+              some: {
+                username: req.params.username,
+              },
             },
           },
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          createdBy: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            createdBy: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            members: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            tickets: {
+              select: {
+                name: true,
+                description: true,
+                priority: true,
+                status: true,
+              },
+            },
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
+      } else {
+        // Without cursor
+        projects = await prisma.project.findMany({
+          take: maxItems,
+          where: {
+            name: {
+              contains: keyword,
+              mode: "insensitive",
+            },
+            members: {
+              some: {
+                username: req.params.username,
+              },
             },
           },
-          members: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            createdBy: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
             },
-          },
-          tickets: {
-            select: {
-              name: true,
-              description: true,
-              priority: true,
-              status: true,
+            members: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
             },
+            tickets: {
+              select: {
+                name: true,
+                description: true,
+                priority: true,
+                status: true,
+              },
+            },
+            createdAt: true,
+            updatedAt: true,
           },
-          createdAt: true,
-        },
-      });
+          orderBy: {
+            id: "asc",
+          },
+        });
+        if (!projects) {
+          return res.status(404).send({ error: "No comments found" });
+        }
+        // Get cursor parameters
+        const lastProject = projects[projects.length - 1];
+        const myCursor = lastProject.id;
 
-      // Get total count of list of projects
-      const totalCount = await prisma.project.count({
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
-          },
-          members: {
-            some: {
-              username: req.params.username,
-            },
-          },
-        },
-      });
-
-      if (!projects) {
-        return res.status(404).send({ error: "No projects found!" });
+        // Send list of projects
+        res.status(200).send({
+          data: projects,
+          nextCursor: myCursor,
+        });
       }
-
-      // Send list of projects
-      res.status(200).send({
-        totalPages: totalCount / Math.min(maxItems, totalCount),
-        data: projects,
-      });
     } catch (err) {
       console.log(err);
       res.status(500).send({

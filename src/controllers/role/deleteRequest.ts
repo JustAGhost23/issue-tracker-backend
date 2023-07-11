@@ -52,7 +52,7 @@ export const deleteRequest = async (req: Request, res: Response) => {
     }
 
     // Check if current user and user whose request is to be deleted are the same
-    if (user.id != request.authorId) {
+    if (user.id !== request.authorId) {
       return res.status(400).send({ error: "User did not make this request" });
     }
 

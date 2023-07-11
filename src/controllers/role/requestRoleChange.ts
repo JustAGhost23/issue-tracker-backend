@@ -42,7 +42,7 @@ export const requestRoleChange = async (req: Request, res: Response) => {
     }
 
     // Check if user has the same role as the one requested to be changed to
-    if (req.body.role == user.role) {
+    if (req.body.role === user.role) {
       res.status(400).send({ error: "User already has this role" });
     }
 

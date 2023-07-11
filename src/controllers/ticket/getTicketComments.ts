@@ -30,15 +30,15 @@ const getTicketCommentsSchema = z.object({
         message: "Number of items must be an integer",
       })
       .optional(),
-    page: z.coerce
+    cursor: z.coerce
       .number({
-        invalid_type_error: "Page number not a number",
+        invalid_type_error: "Cursor not a number",
       })
       .positive({
-        message: "Page number cannot be negative",
+        message: "Cursor cannot be negative",
       })
       .int({
-        message: "Page number must be an integer",
+        message: "Cursor must be an integer",
       })
       .optional(),
     keyword: z
@@ -61,17 +61,19 @@ export const getTicketCommentsValidator: RequestHandler = validate(
 
 export const getTicketComments = async (req: Request, res: Response) => {
   try {
-    // Implement Cursor based pagination after MVP.
+    // Get maxItems
     const maxItems = parseInt((req.query.items as string) ?? "10");
-    const page = parseInt((req.query.page as string) ?? "1") - 1;
-    const keyword = (req.query.keyword as string) ?? "";
 
-    // Add checks for page number and items
-    if (page < 0) {
-      return res.status(400).send({ error: "Invalid page number provided" });
-    }
     if (maxItems < 1) {
       return res.status(400).send({ error: "Invalid number of items" });
+    }
+
+    // Check if cursor is valid
+    if (req.query.cursor) {
+      const cursor = parseInt(req.query.cursor as string);
+      if (cursor < 0) {
+        return res.status(400).send({ error: "Invalid cursor provided" });
+      }
     }
 
     // Check if ticket exists
@@ -84,58 +86,105 @@ export const getTicketComments = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    // Get list of comments
+    // Get comment list
     try {
-      const comments = await prisma.comment.findMany({
-        skip: maxItems * page,
-        take: maxItems,
-        where: {
-          ticketId: ticket.id,
-        },
-        select: {
-          id: true,
-          text: true,
-          author: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
-            },
+      let comments = null;
+      if (req.query.cursor) {
+        // With cursor
+        comments = await prisma.comment.findMany({
+          take: maxItems,
+          skip: 1,
+          cursor: {
+            id: parseInt(req.query.cursor as string),
           },
-          ticket: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              priority: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
-            },
+          where: {
+            ticketId: ticket.id,
           },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      // Get total count of list of comments
-      const totalCount = await prisma.comment.count({
-        where: {
-          ticketId: ticket.id,
-        },
-      });
-      if (!comments) {
-        return res.status(404).send({ error: "No comments found!" });
+          select: {
+            id: true,
+            text: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            ticket: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                priority: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
+      } else {
+        // Without cursor
+        comments = await prisma.comment.findMany({
+          take: maxItems,
+          where: {
+            ticketId: ticket.id,
+          },
+          select: {
+            id: true,
+            text: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            ticket: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                priority: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
       }
+      if (!comments) {
+        return res.status(404).send({ error: "No comments found" });
+      }
+      // Get cursor parameters
+      const lastComment = comments[comments.length - 1];
+      const myCursor = lastComment.id;
 
       // Send list of comments
       res.status(200).send({
-        totalPages: totalCount / Math.min(maxItems, totalCount),
         data: comments,
+        nextCursor: myCursor,
       });
     } catch (err) {
       console.log(err);

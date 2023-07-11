@@ -47,6 +47,7 @@ export const getAllProjectsValidator: RequestHandler =
 
 export const getAllProjects = async (req: Request, res: Response) => {
   try {
+    // Get maxItems and keyword
     const maxItems = parseInt((req.query.items as string) ?? "10");
     const keyword = (req.query.keyword as string) ?? "";
 
@@ -54,6 +55,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
       return res.status(400).send({ error: "Invalid number of items" });
     }
 
+    // Check if cursor is valid
     if (req.query.cursor) {
       const cursor = parseInt(req.query.cursor as string);
       if (cursor < 0) {
@@ -61,10 +63,11 @@ export const getAllProjects = async (req: Request, res: Response) => {
       }
     }
 
-    // Get list of projects
+    // Get project list
     try {
       let projects = null;
       if (req.query.cursor) {
+        // With cursor
         projects = await prisma.project.findMany({
           take: maxItems,
           skip: 1,
@@ -121,6 +124,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
           },
         });
       } else {
+        // Without cursor
         projects = await prisma.project.findMany({
           take: maxItems,
           where: {
@@ -176,6 +180,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
       if (!projects) {
         return res.status(404).send({ error: "No projects found" });
       }
+      // Get cursor parameters
       const lastProject = projects[projects.length - 1];
       const myCursor = lastProject.id;
 
