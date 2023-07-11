@@ -1,8 +1,10 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendProjectRemoveUserMail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const removeUserSchema = z.object({
@@ -50,8 +52,8 @@ const removeUserSchema = z.object({
 });
 
 /**
- * @route POST /api/project/:username/:name/remove-user
- * @type RequestHandler
+ @route POST /api/project/:username/:name/remove-user
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -59,24 +61,15 @@ export const removeUserValidator: RequestHandler = validate(removeUserSchema);
 
 export const removeUser = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project owner exists
-    const projectOwner = await prisma.user.findFirst({
+    const projectOwner = await prisma.user.findUnique({
       where: {
         username: req.params.username,
       },
@@ -86,7 +79,7 @@ export const removeUser = async (req: Request, res: Response) => {
     }
 
     // Check if user to be removed exists
-    const removedUser = await prisma.user.findFirst({
+    const removedUser = await prisma.user.findUnique({
       where: {
         username: req.body.username,
       },
@@ -100,8 +93,7 @@ export const removeUser = async (req: Request, res: Response) => {
       where: {
         projectName: { name: req.params.name, createdById: projectOwner.id },
       },
-      select: {
-        id: true,
+      include: {
         members: {
           select: {
             id: true,
@@ -114,12 +106,16 @@ export const removeUser = async (req: Request, res: Response) => {
     }
 
     // Check if user owns project
-    if (reqUser.username != req.params.username) {
-      return res.status(403).send({ error: "User does not own this project" });
+    if (user.role !== Role.ADMIN) {
+      if (user.username !== projectOwner.username) {
+        return res
+          .status(403)
+          .send({ error: "User does not own this project" });
+      }
     }
 
     // Check if user to be removed is project owner
-    if (user.id == removedUser.id) {
+    if (user.id === removedUser.id) {
       return res.status(400).send({
         error:
           "Cannot remove project owner, please transfer ownership or delete project",
@@ -135,7 +131,9 @@ export const removeUser = async (req: Request, res: Response) => {
         return false;
       })
     ) {
-      return res.status(400).send({ error: "User is not a member of the project" });
+      return res
+        .status(400)
+        .send({ error: "User is not a member of the project" });
     }
 
     // Update project
@@ -161,6 +159,7 @@ export const removeUser = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -172,6 +171,7 @@ export const removeUser = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -185,16 +185,23 @@ export const removeUser = async (req: Request, res: Response) => {
           },
         },
         createdAt: true,
+        updatedAt: true,
       },
     });
 
-    // Removed user successfully
-    res.status(200).send({
-      data: {
-        newProject,
-      },
-      message: "Removed user successfully",
-    });
+    try {
+      await sendProjectRemoveUserMail(user, project, removedUser.email);
+
+      // Removed user successfully
+      res.status(200).send({
+        data: {
+          newProject,
+        },
+        message: "Removed user successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

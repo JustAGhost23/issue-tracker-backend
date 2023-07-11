@@ -1,8 +1,10 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendProjectDeletedMail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const deleteProjectSchema = z.object({
@@ -42,7 +44,7 @@ const deleteProjectSchema = z.object({
 
 /**
  @route POST /api/project/:username/:name/delete
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -51,24 +53,15 @@ export const deleteProjectValidator: RequestHandler =
 
 export const deleteProject = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project owner exists
-    const projectOwner = await prisma.user.findFirst({
+    const projectOwner: User | null = await prisma.user.findUnique({
       where: {
         username: req.params.username,
       },
@@ -82,20 +75,36 @@ export const deleteProject = async (req: Request, res: Response) => {
       where: {
         projectName: { name: req.params.name, createdById: projectOwner.id },
       },
+      include: {
+        members: {
+          select: {
+            email: true,
+          },
+        },
+      },
     });
     if (!project) {
       return res.status(404).send({ error: "Project not found" });
     }
 
+    // Get members emailIds
+    const emailIds: string[] = project.members.map((user) => user.email);
+
     // Check if user owns project
-    if (reqUser.username != req.params.username) {
-      return res.status(403).send({ error: "User does not own this project" });
+    if (user.role !== Role.ADMIN) {
+      if (user.username !== projectOwner.username) {
+        return res
+          .status(403)
+          .send({ error: "User does not own this project" });
+      }
     }
+
+    const projectName = project.name;
 
     // Delete project from database
     const deletedProject = await prisma.project.delete({
       where: {
-        projectName: { name: req.params.name, createdById: projectOwner.id },
+        projectName: { name: project.name, createdById: projectOwner.id },
       },
     });
     if (!deletedProject) {
@@ -105,7 +114,14 @@ export const deleteProject = async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(200).send({ message: "Deleted project successfully" });
+    try {
+      await sendProjectDeletedMail(user, projectName, emailIds);
+
+      // Email sent successfully
+      res.status(200).send({ message: "Deleted project successfully" });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

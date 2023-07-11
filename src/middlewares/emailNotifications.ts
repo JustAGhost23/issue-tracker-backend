@@ -149,10 +149,13 @@ export const sendTicketUnassignedEmail = async (
     });
 };
 
-export const sendApprovedRoleChangeMail = async (request: Requests, assignedEmailId: string) => {
+export const sendApprovedRoleChangeMail = async (
+  request: Requests,
+  emailId: string
+) => {
   const msg = {
     from: "issuetracker@gmail.com",
-    to: assignedEmailId,
+    to: emailId,
     subject: "Request for role change approved",
     html: `Your request for your role to be changed to ${request.role} has been approved`,
   };
@@ -171,11 +174,11 @@ export const sendApprovedRoleChangeMail = async (request: Requests, assignedEmai
 
 export const sendRejectedRoleChangeMail = async (
   request: Requests,
-  assignedEmailId: string
+  emailId: string
 ) => {
   const msg = {
     from: "issuetracker@gmail.com",
-    to: assignedEmailId,
+    to: emailId,
     subject: "Request for role change rejected",
     html: `Your request for your role to be changed to ${request.role} has been rejected`,
   };
@@ -189,5 +192,101 @@ export const sendRejectedRoleChangeMail = async (
     .catch((err) => {
       console.log(err);
       throw Error("Something went wrong while sending rejected request email");
+    });
+};
+
+export const sendProjectDeletedMail = async (
+  user: User,
+  projectName: string,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Project ${projectName}`,
+    html: `Project ${projectName} was deleted by ${user.role} ${user.username}.`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending rejected request email");
+    });
+};
+
+export const sendProjectAddUserMail = async (
+  user: User,
+  project: Project,
+  emailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailId,
+    subject: `Project ${project.name}`,
+    html: `You were added to Project ${project.name} by ${user.role} ${user.username}.`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending add user email");
+    });
+};
+
+export const sendProjectRemoveUserMail = async (
+  user: User,
+  project: Project,
+  emailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailId,
+    subject: `Project ${project.name}`,
+    html: `You were removed from Project ${project.name} by ${user.role} ${user.username}.`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending remove user email");
+    });
+};
+
+export const sendTransferOwnershipMail = async (
+  user: User,
+  project: Project,
+  emailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailId,
+    subject: `Project ${project.name}`,
+    html: `You were made the new owner of Project ${project.name} by ${user.role} ${user.username}.`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending transfer ownership email");
     });
 };

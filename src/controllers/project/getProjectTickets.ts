@@ -49,15 +49,15 @@ const getProjectTicketsSchema = z.object({
         message: "Number of items must be an integer",
       })
       .optional(),
-    page: z.coerce
+    cursor: z.coerce
       .number({
-        invalid_type_error: "Page number not a number",
+        invalid_type_error: "Cursor not a number",
       })
       .positive({
-        message: "Page number cannot be negative",
+        message: "Cursor cannot be negative",
       })
       .int({
-        message: "Page number must be an integer",
+        message: "Cursor must be an integer",
       })
       .optional(),
     keyword: z
@@ -70,7 +70,7 @@ const getProjectTicketsSchema = z.object({
 
 /**
  @route GET /api/project/:username/:name/tickets
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -80,17 +80,18 @@ export const getProjectTicketsValidator: RequestHandler = validate(
 
 export const getProjectTickets = async (req: Request, res: Response) => {
   try {
-    // Implement Cursor based pagination after MVP.
     const maxItems = parseInt((req.query.items as string) ?? "10");
-    const page = parseInt((req.query.page as string) ?? "1") - 1;
     const keyword = (req.query.keyword as string) ?? "";
 
-    // Add checks for page number and items
-    if (page < 0) {
-      return res.status(400).send({ error: "Invalid page number provided" });
-    }
     if (maxItems < 1) {
       return res.status(400).send({ error: "Invalid number of items" });
+    }
+
+    if (req.query.cursor) {
+      const cursor = parseInt(req.query.cursor as string);
+      if (cursor < 0) {
+        return res.status(400).send({ error: "Invalid cursor provided" });
+      }
     }
 
     // Check if project owner exists
@@ -113,74 +114,114 @@ export const getProjectTickets = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Project not found" });
     }
 
-    // Get list of tickets
     try {
-      const tickets = await prisma.ticket.findMany({
-        skip: maxItems * page,
-        take: maxItems,
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
+      let tickets = null;
+      if (req.query.cursor) {
+        tickets = await prisma.ticket.findMany({
+          take: maxItems,
+          skip: 1,
+          cursor: {
+            id: parseInt(req.query.cursor as string),
           },
-          project: {
-            createdBy: {
-              username: req.params.username,
+          where: {
+            name: {
+              contains: keyword,
+              mode: "insensitive",
             },
-            name: req.params.name,
-          },
-        },
-        select: {
-          name: true,
-          description: true,
-          priority: true,
-          status: true,
-          project: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
+            project: {
+              createdBy: {
+                username: req.params.username,
+              },
+              name: req.params.name,
             },
           },
-          reportedBy: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              email: true,
-              provider: true,
-              createdAt: true,
-              updatedAt: true,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            priority: true,
+            status: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+            reportedBy: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            number: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        });
+      } else {
+        tickets = await prisma.ticket.findMany({
+          take: maxItems,
+          where: {
+            name: {
+              contains: keyword,
+              mode: "insensitive",
+            },
+            project: {
+              createdBy: {
+                username: req.params.username,
+              },
+              name: req.params.name,
             },
           },
-          number: true,
-        },
-      });
-
-      // Get total count of list of tickets
-      const totalCount = await prisma.ticket.count({
-        where: {
-          name: {
-            contains: keyword,
-            mode: "insensitive",
-          },
-          project: {
-            createdBy: {
-              username: req.params.username,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            priority: true,
+            status: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
             },
-            name: req.params.name,
+            reportedBy: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                provider: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            number: true,
           },
-        },
-      });
+          orderBy: {
+            id: "asc",
+          },
+        });
+      }
 
       if (!tickets) {
-        return res.status(404).send({ error: "No tickets found!" });
+        return res.status(404).send({ error: "No projects found" });
       }
+      const lastTicket = tickets[tickets.length - 1];
+      const myCursor = lastTicket.id;
 
       // Send list of tickets
       res.status(200).send({
-        totalPages: totalCount / Math.min(maxItems, totalCount),
         data: tickets,
+        nextCursor: myCursor,
       });
     } catch (err) {
       console.log(err);

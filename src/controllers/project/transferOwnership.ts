@@ -1,8 +1,10 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendTransferOwnershipMail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const transferOwnershipSchema = z.object({
@@ -50,8 +52,8 @@ const transferOwnershipSchema = z.object({
 });
 
 /**
- * @route POST /api/project/:username/:name/transfer
- * @type RequestHandler
+ @route POST /api/project/:username/:name/transfer
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -61,24 +63,15 @@ export const transferOwnershipValidator: RequestHandler = validate(
 
 export const transferOwnership = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project owner exists
-    const projectOwner = await prisma.user.findFirst({
+    const projectOwner = await prisma.user.findUnique({
       where: {
         username: req.params.username,
       },
@@ -88,7 +81,7 @@ export const transferOwnership = async (req: Request, res: Response) => {
     }
 
     // Check if user to be made owner exists
-    const newProjectOwner = await prisma.user.findFirst({
+    const newProjectOwner = await prisma.user.findUnique({
       where: {
         username: req.body.username,
       },
@@ -108,8 +101,21 @@ export const transferOwnership = async (req: Request, res: Response) => {
     }
 
     // Check if user owns project
-    if (reqUser.username != req.params.username) {
-      return res.status(403).send({ error: "User does not own this project" });
+    if (user.role !== Role.ADMIN) {
+      if (user.username !== projectOwner.username) {
+        return res
+          .status(403)
+          .send({ error: "User does not own this project" });
+      }
+    }
+
+    // Check if user to be made owner has required roles
+    if (newProjectOwner.role === Role.EMPLOYEE) {
+      return res
+        .status(400)
+        .send({
+          error: "User to be made owner does not have required permissions",
+        });
     }
 
     // Update project
@@ -140,6 +146,7 @@ export const transferOwnership = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -151,6 +158,7 @@ export const transferOwnership = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -164,16 +172,23 @@ export const transferOwnership = async (req: Request, res: Response) => {
           },
         },
         createdAt: true,
+        updatedAt: true,
       },
     });
 
-    // Transferred ownership successfully
-    res.status(200).send({
-      data: {
-        newProject,
-      },
-      message: "Transferred ownership successfully",
-    });
+    try {
+      await sendTransferOwnershipMail(user, project, newProjectOwner.email);
+
+      // Transferred ownership successfully
+      res.status(200).send({
+        data: {
+          newProject,
+        },
+        message: "Transferred ownership successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

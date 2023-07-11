@@ -40,8 +40,8 @@ const createProjectSchema = z.object({
 });
 
 /**
- * @route POST /api/project/
- * @type RequestHandler
+ @route POST /api/project/
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -52,15 +52,15 @@ export const createProject = async (req: Request, res: Response) => {
   try {
     // Get current User
     const reqUser = req.user as User;
-    const user = (await getCurrentUser(reqUser)) as User;
-    if (!user) {
-      return res.status(400).send({ error: "Invalid user credentials" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if another project with same name and owner exists
     const foundName: Project | null = await prisma.project.findUnique({
       where: {
-        projectName: { name: req.body.name, createdById: reqUser.id },
+        projectName: { name: req.body.name, createdById: user.id },
       },
     });
     if (foundName) {
@@ -127,6 +127,7 @@ export const createProject = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -138,6 +139,7 @@ export const createProject = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -151,6 +153,7 @@ export const createProject = async (req: Request, res: Response) => {
           },
         },
         createdAt: true,
+        updatedAt: true,
       },
     });
 

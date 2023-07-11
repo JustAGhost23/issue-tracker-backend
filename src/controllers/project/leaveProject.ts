@@ -3,6 +3,7 @@ import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
 const leaveProjectSchema = z.object({
@@ -41,8 +42,8 @@ const leaveProjectSchema = z.object({
 });
 
 /**
- * @route POST /api/project/:username/:name/leave
- * @type RequestHandler
+ @route POST /api/project/:username/:name/leave
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -51,24 +52,15 @@ export const leaveProjectValidator: RequestHandler =
 
 export const leaveProject = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project owner exists
-    const projectOwner = await prisma.user.findFirst({
+    const projectOwner = await prisma.user.findUnique({
       where: {
         username: req.params.username,
       },
@@ -98,7 +90,7 @@ export const leaveProject = async (req: Request, res: Response) => {
     // Check if user is a member of the project
     if (
       !project.members.some((element) => {
-        if (element.id == user.id) {
+        if (element.id === user.id) {
           return true;
         }
         return false;
@@ -110,7 +102,7 @@ export const leaveProject = async (req: Request, res: Response) => {
     }
 
     // Check if user to be removed is project owner
-    if (projectOwner.id == user.id) {
+    if (projectOwner.id === user.id) {
       return res.status(400).send({
         error:
           "Cannot remove project owner, please transfer ownership or delete project",
@@ -140,6 +132,7 @@ export const leaveProject = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -151,6 +144,7 @@ export const leaveProject = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -164,6 +158,7 @@ export const leaveProject = async (req: Request, res: Response) => {
           },
         },
         createdAt: true,
+        updatedAt: true,
       },
     });
 

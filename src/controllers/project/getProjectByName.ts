@@ -41,7 +41,7 @@ const getProjectByNameSchema = z.object({
 
 /**
  @route GET /api/project/:username/:name
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -60,7 +60,7 @@ export const getProjectByName = async (req: Request, res: Response) => {
     if (!user) {
       return res
         .status(404)
-        .send({ error: "No user with username provided found!" });
+        .send({ error: "No user with username provided found" });
     }
 
     // Check if project with given name exists
@@ -79,6 +79,7 @@ export const getProjectByName = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -90,6 +91,7 @@ export const getProjectByName = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -103,12 +105,13 @@ export const getProjectByName = async (req: Request, res: Response) => {
           },
         },
         createdAt: true,
+        updatedAt: true,
       },
     });
     if (!project) {
       return res
         .status(404)
-        .send({ error: "No project with name provided found!" });
+        .send({ error: "No project with name provided found" });
     }
 
     // Send project details

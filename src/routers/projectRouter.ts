@@ -33,6 +33,12 @@ import {
   getProjectTickets,
   getProjectTicketsValidator,
 } from "../controllers/project/getProjectTickets.js";
+import { authorize } from "../middlewares/user.js";
+import { Role } from "@prisma/client";
+import {
+  editProject,
+  editProjectValidator,
+} from "../controllers/project/editProject.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -48,7 +54,13 @@ projectRouter.get("/", passportJWT, getAllProjectsValidator, getAllProjects);
  @route /api/project/
  @desc Create new project
  */
-projectRouter.post("/", passportJWT, createProjectValidator, createProject);
+projectRouter.post(
+  "/",
+  passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
+  createProjectValidator,
+  createProject
+);
 
 /**
  @route /api/project/:username/:name
@@ -79,6 +91,7 @@ projectRouter.get(
 projectRouter.post(
   "/:username/:name/transfer",
   passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
   transferOwnershipValidator,
   transferOwnership
 );
@@ -90,6 +103,7 @@ projectRouter.post(
 projectRouter.post(
   "/:username/:name/add-user",
   passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
   addUserValidator,
   addUser
 );
@@ -102,6 +116,7 @@ projectRouter.post(
 projectRouter.post(
   "/:username/:name/remove-user",
   passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
   removeUserValidator,
   removeUser
 );
@@ -118,12 +133,25 @@ projectRouter.post(
 );
 
 /**
+ @route /api/project/:username/:name/edit
+ @desc Edit project
+ */
+projectRouter.post(
+  "/:username/:name/edit",
+  passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
+  editProjectValidator,
+  editProject
+);
+
+/**
  @route /api/project/:username/:name/delete
  @desc Delete project
  */
 projectRouter.post(
   "/:username/:name/delete",
   passportJWT,
+  authorize(Role.ADMIN, Role.PROJECT_OWNER),
   deleteProjectValidator,
   deleteProject
 );
