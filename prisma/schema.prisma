@@ -110,15 +110,12 @@ enum Priority {
 enum Status {
   OPEN
   ASSIGNED
-  IN_PROGRESS
   CLOSED
 }
 
 enum ActivityType {
   CREATED
   UPDATED
-  CLOSED
-  REOPENED
   ASSIGNED
   UNASSIGNED
   COMMENTED

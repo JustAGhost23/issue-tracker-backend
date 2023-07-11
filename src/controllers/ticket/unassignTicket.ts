@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { ActivityType, Status, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -48,8 +48,8 @@ const unassignTicketSchema = z.object({
 });
 
 /**
- * @route POST /api/ticket/:ticketId/unassign
- * @type RequestHandler
+ @route POST /api/ticket/:ticketId/unassign
+ @type RequestHandler
  */
 
 export const unassignTicketValidator: RequestHandler =
@@ -148,11 +148,25 @@ export const unassignTicket = async (req: Request, res: Response) => {
           },
         },
       },
+      include: {
+        assignees: true,
+      },
     });
     if (!updateTicket) {
       return res
         .status(500)
         .send({ error: "Something went wrong while unassigning user" });
+    }
+
+    if (updateTicket.assignees.length === 0) {
+      const updateTicketStatus = await prisma.ticket.update({
+        where: {
+          id: ticket.id,
+        },
+        data: {
+          status: Status.OPEN,
+        },
+      });
     }
 
     const newTicket = await prisma.ticket.findUnique({
@@ -189,17 +203,37 @@ export const unassignTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
         },
         number: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const issueActivity = await prisma.issueActivity.create({
+      data: {
+        type: ActivityType.UNASSIGNED,
+        text: `${user.username} unassigned you from the following ticket: ${ticket.name} in the project: ${project.name}`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
     });
 
     try {
       await sendTicketUnassignedEmail(
-        project,
+        issueActivity,
         updateTicket,
         unassignedUser.email
       );

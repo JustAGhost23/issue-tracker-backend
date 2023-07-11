@@ -22,7 +22,7 @@ const getTicketByIdSchema = z.object({
 
 /**
  @route GET /api/ticket/:ticketId
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema
@@ -55,6 +55,7 @@ export const getTicketById = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -66,11 +67,14 @@ export const getTicketById = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
         },
         number: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
     if (!ticket) {

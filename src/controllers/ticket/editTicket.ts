@@ -1,8 +1,10 @@
-import { User, Priority, Status, Ticket } from "@prisma/client";
+import { User, Priority, Status, Ticket, ActivityType } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendTicketEditedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const editTicketSchema = z.object({
@@ -42,36 +44,27 @@ const editTicketSchema = z.object({
 });
 
 /**
- * @route POST /api/ticket/:ticketId/edit
- * @type RequestHandler
+ @route POST /api/ticket/:ticketId/edit
+ @type RequestHandler
  */
 
 export const editTicketValidator: RequestHandler = validate(editTicketSchema);
 
 export const editTicket = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project exists
-    const project = await prisma.project.findFirst({
+    const project = await prisma.project.findUnique({
       where: {
         id: req.body.projectId,
       },
-      select: {
-        id: true,
+      include: {
         members: {
           select: {
             id: true,
@@ -98,9 +91,21 @@ export const editTicket = async (req: Request, res: Response) => {
     }
 
     // Check if ticket exists
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.ticket.findUnique({
       where: {
         id: parseInt(req.params.ticketId),
+      },
+      include: {
+        reportedBy: {
+          select: {
+            email: true,
+          },
+        },
+        assignees: {
+          select: {
+            email: true,
+          },
+        },
       },
     });
     if (!ticket) {
@@ -163,6 +168,7 @@ export const editTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -174,6 +180,7 @@ export const editTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -182,13 +189,39 @@ export const editTicket = async (req: Request, res: Response) => {
       },
     });
 
-    // Ticket edited successfully
-    return res.status(200).send({
+    const emailIds = ticket.assignees.map((assignee) => assignee.email);
+    emailIds.push(ticket.reportedBy.email);
+
+    const issueActivity = await prisma.issueActivity.create({
       data: {
-        outTicket,
+        type: ActivityType.UPDATED,
+        text: `${user.username} made changes to the ticket: ${ticket.name} in the project: ${project.name}.`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
-      message: "Ticket edited successfully",
     });
+
+    try {
+      await sendTicketEditedEmail(issueActivity, ticket, emailIds);
+
+      // Ticket edited successfully
+      return res.status(200).send({
+        data: {
+          outTicket,
+        },
+        message: "Ticket edited successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

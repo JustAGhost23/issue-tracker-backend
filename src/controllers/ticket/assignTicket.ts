@@ -1,4 +1,4 @@
-import { User, Ticket } from "@prisma/client";
+import { ActivityType, Status, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -49,8 +49,8 @@ const assignTicketSchema = z.object({
 });
 
 /**
- * @route POST /api/ticket/:ticketId/assign
- * @type RequestHandler
+ @route POST /api/ticket/:ticketId/assign
+ @type RequestHandler
  */
 
 export const assignTicketValidator: RequestHandler =
@@ -66,7 +66,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     }
 
     // Check if project exists
-    const project = await prisma.project.findFirst({
+    const project = await prisma.project.findUnique({
       where: {
         id: req.body.projectId,
       },
@@ -160,6 +160,7 @@ export const assignTicket = async (req: Request, res: Response) => {
         id: parseInt(req.params.ticketId),
       },
       data: {
+        status: Status.ASSIGNED,
         assignees: {
           connect:
             assignedUserIdsToAssign.map((userId) => ({ id: userId })) || [],
@@ -195,6 +196,7 @@ export const assignTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -206,16 +208,36 @@ export const assignTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
         },
         number: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const issueActivity = await prisma.issueActivity.create({
+      data: {
+        type: ActivityType.ASSIGNED,
+        text: `${user.username} assigned you the following ticket: ${ticket.name} in the project: ${project.name}`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
     });
 
     try {
-      await sendTicketAssignedEmail(project, updateTicket, assignedEmailIds);
+      await sendTicketAssignedEmail(issueActivity, updateTicket, assignedEmailIds);
 
       // Email sent successfully
       return res.status(200).send({

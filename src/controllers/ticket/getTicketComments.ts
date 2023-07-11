@@ -51,7 +51,7 @@ const getTicketCommentsSchema = z.object({
 
 /**
  @route GET /api/ticket/:ticketId/comments
- @desc Request Handler
+ @type RequestHandler
  */
 
 // Function to validate request using zod schema

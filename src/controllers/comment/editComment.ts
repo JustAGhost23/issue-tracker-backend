@@ -1,9 +1,10 @@
-import { User } from "@prisma/client";
+import { ActivityType, User } from "@prisma/client";
 import { RequestHandler, Request, Response, text } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
+import { sendCommentEditedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const editCommentSchema = z.object({
@@ -57,6 +58,33 @@ export const editComment = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Comment not found" });
     }
 
+    // Get ticket from comment
+    const ticket = await prisma.ticket.findUnique({
+      where: {
+        id: comment.ticketId,
+      },
+      include: {
+        project: {
+          select: {
+            name: true,
+          },
+        },
+        reportedBy: {
+          select: {
+            email: true,
+          },
+        },
+        assignees: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+    if (!ticket) {
+      return res.status(404).send({ error: "Ticket not found" });
+    }
+
     // Check if user made the comment
     if (user.id !== comment.authorId) {
       return res
@@ -108,12 +136,39 @@ export const editComment = async (req: Request, res: Response) => {
         .send({ error: "Something went wrong while editing comment" });
     }
 
-    res.status(200).send({
+    const emailIds = ticket.assignees.map((assignee) => assignee.email);
+    emailIds.push(ticket.reportedBy.email);
+
+    const issueActivity = await prisma.issueActivity.create({
       data: {
-        updatedComment,
+        type: ActivityType.UPDATED,
+        text: `${user.username} edited a comment under the ticket: ${ticket.name} in the project: ${ticket.project.name}.`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
-      message: "Edited comment successfully",
     });
+
+    try {
+      await sendCommentEditedEmail(issueActivity, ticket, emailIds);
+
+      // Comment edited successfully
+      return res.status(200).send({
+        data: {
+          updatedComment,
+        },
+        message: "Edited comment successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

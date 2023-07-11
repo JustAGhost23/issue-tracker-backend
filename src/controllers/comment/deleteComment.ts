@@ -1,9 +1,10 @@
-import { Role, User } from "@prisma/client";
+import { ActivityType, Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
 import { getCurrentUser } from "../../middlewares/user.js";
+import { sendCommentDeletedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const deleteCommentSchema = z.object({
@@ -50,6 +51,33 @@ export const deleteComment = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Comment not found" });
     }
 
+    // Get ticket from comment
+    const ticket = await prisma.ticket.findUnique({
+      where: {
+        id: comment.ticketId,
+      },
+      include: {
+        project: {
+          select: {
+            name: true,
+          },
+        },
+        reportedBy: {
+          select: {
+            email: true,
+          },
+        },
+        assignees: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+    if (!ticket) {
+      return res.status(404).send({ error: "Ticket not found" });
+    }
+
     if (user.role !== Role.ADMIN) {
       // Check if user made the comment
       if (user.id !== comment.authorId) {
@@ -72,7 +100,34 @@ export const deleteComment = async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(200).send({ message: "Deleted comment successfully" });
+    const emailIds = ticket.assignees.map((assignee) => assignee.email);
+    emailIds.push(ticket.reportedBy.email);
+
+    const issueActivity = await prisma.issueActivity.create({
+      data: {
+        type: ActivityType.DELETED,
+        text: `${user.username} deleted a comment under the ticket: ${ticket.name} in the project: ${ticket.project.name}.`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      },
+    });
+
+    try {
+      await sendCommentDeletedEmail(issueActivity, ticket, emailIds);
+
+      // Comment edited successfully
+      res.status(200).send({ message: "Deleted comment successfully" });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

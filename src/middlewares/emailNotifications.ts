@@ -244,18 +244,39 @@ export const sendTransferOwnershipMail = async (
     });
 };
 
-export const sendTicketAssignedEmail = async (
+export const sendTicketCreatedEmail = async (
+  issueActivity: IssueActivity,
   project: Project,
-  ticket: Ticket,
-  assignedEmailIds: string[]
+  emailIds: string[]
 ) => {
-  const frontendLink = `http://localhost:3000`;
-
   const msg = {
     from: "issuetracker@gmail.com",
-    to: assignedEmailIds,
-    subject: "Ticket Assigned",
-    html: `You have been assigned the ticket ${ticket.name} in the project ${project.name}, please click on this <a href="${frontendLink}">link</a> to go to the website`,
+    to: emailIds,
+    subject: `Project ${project.name}`,
+    html: issueActivity.text,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticked assigned email");
+    });
+};
+
+export const sendTicketAssignedEmail = async (
+  issueActivity: IssueActivity,
+  ticket: Ticket,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
   };
 
   transporter
@@ -270,15 +291,39 @@ export const sendTicketAssignedEmail = async (
 };
 
 export const sendTicketUnassignedEmail = async (
-  project: Project,
+  issueActivity: IssueActivity,
   ticket: Ticket,
-  assignedEmailId: string
+  emailId: string
 ) => {
   const msg = {
     from: "issuetracker@gmail.com",
-    to: assignedEmailId,
-    subject: "Ticket Unassigned",
-    html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
+    to: emailId,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticket unassigned email");
+    });
+};
+
+export const sendTicketEditedEmail = async (
+  issueActivity: IssueActivity,
+  ticket: Ticket,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
   };
 
   transporter
@@ -314,5 +359,53 @@ export const sendCommentCreatedEmail = async (
     .catch((err) => {
       console.log(err);
       throw Error("Something went wrong while sending comment created email");
+    });
+};
+
+export const sendCommentEditedEmail = async (
+  issueActivity: IssueActivity,
+  ticket: Ticket,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticket unassigned email");
+    });
+};
+
+export const sendCommentDeletedEmail = async (
+  issueActivity: IssueActivity,
+  ticket: Ticket,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticket unassigned email");
     });
 };

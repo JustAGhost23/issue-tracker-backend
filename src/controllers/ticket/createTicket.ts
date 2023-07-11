@@ -1,8 +1,10 @@
-import { User, Priority, Status, Ticket } from "@prisma/client";
+import { User, Priority, Status, Ticket, ActivityType } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendTicketCreatedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const createTicketSchema = z.object({
@@ -31,13 +33,12 @@ const createTicketSchema = z.object({
       })
       .optional(),
     priority: z.nativeEnum(Priority),
-    status: z.nativeEnum(Status),
   }),
 });
 
 /**
- * @route POST /api/ticket/
- * @type RequestHandler
+ @route POST /api/ticket/
+ @type RequestHandler
  */
 
 export const createTicketValidator: RequestHandler =
@@ -45,31 +46,23 @@ export const createTicketValidator: RequestHandler =
 
 export const createTicket = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if project exists
-    const project = await prisma.project.findFirst({
+    const project = await prisma.project.findUnique({
       where: {
         id: req.body.projectId,
       },
-      select: {
-        id: true,
+      include: {
         members: {
           select: {
             id: true,
+            email: true,
           },
         },
       },
@@ -106,7 +99,7 @@ export const createTicket = async (req: Request, res: Response) => {
         data: {
           name: req.body.name,
           priority: req.body.priority,
-          status: req.body.status,
+          status: Status.OPEN,
           project: {
             connect: {
               id: project.id,
@@ -126,7 +119,7 @@ export const createTicket = async (req: Request, res: Response) => {
           name: req.body.name,
           description: req.body.description,
           priority: req.body.priority,
-          status: req.body.status,
+          status: Status.OPEN,
           project: {
             connect: {
               id: project.id,
@@ -171,6 +164,7 @@ export const createTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -182,21 +176,49 @@ export const createTicket = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
-            updatedAt: true
-          }
+            updatedAt: true,
+          },
         },
         number: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
-    // Ticket created successfully
-    return res.status(200).send({
+    const emailIds: string[] = project.members.map((user) => user.email);
+
+    const issueActivity = await prisma.issueActivity.create({
       data: {
-        newTicket,
+        type: ActivityType.CREATED,
+        text: `${user.username} created a new ticket: ${ticket.name} in the project: ${project.name}`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
-      message: "Ticket created successfully",
     });
+
+    try {
+      await sendTicketCreatedEmail(issueActivity, project, emailIds);
+
+      // Ticket created successfully
+      return res.status(200).send({
+        data: {
+          newTicket,
+        },
+        message: "Ticket created successfully",
+      });
+    } catch (err) {
+      return res.status(500).send({ error: err });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({
