@@ -1,8 +1,10 @@
-import { User } from "@prisma/client";
+import { ActivityType, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
+import { sendCommentCreatedEmail } from "../../middlewares/emailNotifications.js";
 
 // Zod schema to validate request
 const createCommentSchema = z.object({
@@ -29,7 +31,7 @@ const createCommentSchema = z.object({
 });
 
 /**
- @route /api/comment/
+ @route POST /api/comment/
  @type RequestHandler
  */
 
@@ -38,29 +40,24 @@ export const createCommentValidator: RequestHandler =
 
 export const createComment = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if ticket exists
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.ticket.findUnique({
       where: {
         id: req.body.ticketId,
       },
-      select: {
-        id: true,
-        projectId: true,
+      include: {
+        assignees: {
+          select: {
+            email: true,
+          },
+        },
       },
     });
     if (!ticket) {
@@ -68,7 +65,7 @@ export const createComment = async (req: Request, res: Response) => {
     }
 
     // Check if project exists
-    const project = await prisma.project.findFirst({
+    const project = await prisma.project.findUnique({
       where: {
         id: ticket.projectId,
       },
@@ -99,6 +96,7 @@ export const createComment = async (req: Request, res: Response) => {
         .send({ error: "User is not a member of the project" });
     }
 
+    // Create comment
     const comment = await prisma.comment.create({
       data: {
         text: req.body.text,
@@ -120,7 +118,7 @@ export const createComment = async (req: Request, res: Response) => {
         .send({ error: "Something went wrong while creating new comment" });
     }
 
-    const newComment = await prisma.comment.findFirst({
+    const newComment = await prisma.comment.findUnique({
       where: {
         id: comment.id,
       },
@@ -134,6 +132,7 @@ export const createComment = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -154,13 +153,50 @@ export const createComment = async (req: Request, res: Response) => {
       },
     });
 
-    // Comment created successfully
-    return res.status(200).send({
+    const emailIds: string[] = ticket.assignees.map(
+      (assignee) => assignee.email
+    );
+
+    const issueActivity = await prisma.issueActivity.create({
       data: {
-        newComment,
+        type: ActivityType.COMMENTED,
+        text: `${user.username} made a new comment on ticket: ${ticket.name}`,
+        ticket: {
+          connect: {
+            id: ticket.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
-      message: "Comment created successfully",
     });
+
+    if (emailIds.length !== 0) {
+      try {
+        await sendCommentCreatedEmail(issueActivity, ticket, emailIds);
+
+        // Comment created successfully
+        return res.status(200).send({
+          data: {
+            newComment,
+          },
+          message: "Comment created successfully",
+        });
+      } catch (err) {
+        return res.status(500).send({ error: err });
+      }
+    } else {
+      // Comment created successfully
+      return res.status(200).send({
+        data: {
+          newComment,
+        },
+        message: "Comment created successfully",
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({

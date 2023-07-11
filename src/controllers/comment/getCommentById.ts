@@ -34,7 +34,7 @@ export const getCommentById = async (req: Request, res: Response) => {
     // Check if comment exists
     const comment = await prisma.comment.findUnique({
       where: {
-        id: parseInt(req.params.ticketId),
+        id: parseInt(req.params.commentId),
       },
       select: {
         id: true,
@@ -46,6 +46,7 @@ export const getCommentById = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },

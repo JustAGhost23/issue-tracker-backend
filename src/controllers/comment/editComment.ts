@@ -3,6 +3,7 @@ import { RequestHandler, Request, Response, text } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
 const editCommentSchema = z.object({
@@ -39,20 +40,11 @@ export const editCommentValidator: RequestHandler = validate(editCommentSchema);
 
 export const editComment = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if comment exists
@@ -66,7 +58,7 @@ export const editComment = async (req: Request, res: Response) => {
     }
 
     // Check if user made the comment
-    if (user.id != comment.authorId) {
+    if (user.id !== comment.authorId) {
       return res
         .status(403)
         .send({ error: "User cannot edit a comment made by someone else" });
@@ -90,6 +82,7 @@ export const editComment = async (req: Request, res: Response) => {
             name: true,
             email: true,
             provider: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
           },

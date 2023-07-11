@@ -1,8 +1,9 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { prisma } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { z } from "zod";
+import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
 const deleteCommentSchema = z.object({
@@ -32,20 +33,11 @@ export const deleteCommentValidator: RequestHandler =
 
 export const deleteComment = async (req: Request, res: Response) => {
   try {
-    // Check if user is valid
+    // Get current User
     const reqUser = req.user as User;
-    if (!reqUser) {
-      return res.status(400).send({ error: "Invalid user sent in request" });
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findFirst({
-      where: {
-        id: reqUser.id,
-      },
-    });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
+    const user = await getCurrentUser(reqUser);
+    if (user instanceof Error) {
+      return res.status(400).send({ error: user.message });
     }
 
     // Check if comment exists
@@ -58,11 +50,13 @@ export const deleteComment = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Comment not found" });
     }
 
-    // Check if user made the comment
-    if (user.id != comment.authorId) {
-      return res
-        .status(403)
-        .send({ error: "User cannot delete a comment made by someone else" });
+    if (user.role !== Role.ADMIN) {
+      // Check if user made the comment
+      if (user.id !== comment.authorId) {
+        return res
+          .status(403)
+          .send({ error: "User cannot delete a comment made by someone else" });
+      }
     }
 
     // Delete comment from database

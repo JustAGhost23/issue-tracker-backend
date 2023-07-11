@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { redisClient } from "../config/db.js";
 import { hashPassword } from "../utils/password.js";
 import crypto from "crypto";
-import { Project, Requests, Ticket, User } from "@prisma/client";
+import { IssueActivity, Project, Requests, Ticket, User } from "@prisma/client";
 
 const config = {
   service: "gmail",
@@ -97,55 +97,6 @@ export const sendForgotPasswordEmail = async (user: User) => {
     .catch((err) => {
       console.log(err);
       throw Error("Something went wrong while sending password recovery email");
-    });
-};
-
-export const sendTicketAssignedEmail = async (
-  project: Project,
-  ticket: Ticket,
-  assignedEmailIds: string[]
-) => {
-  const frontendLink = `http://localhost:3000`;
-
-  const msg = {
-    from: "issuetracker@gmail.com",
-    to: assignedEmailIds,
-    subject: "Ticket Assigned",
-    html: `You have been assigned the ticket ${ticket.name} in the project ${project.name}, please click on this <a href="${frontendLink}">link</a> to go to the website`,
-  };
-
-  transporter
-    .sendMail(msg)
-    .then(() => {
-      console.log("Email sent successfully");
-    })
-    .catch((err) => {
-      console.log(err);
-      throw Error("Something went wrong while sending ticked assigned email");
-    });
-};
-
-export const sendTicketUnassignedEmail = async (
-  project: Project,
-  ticket: Ticket,
-  assignedEmailId: string
-) => {
-  const msg = {
-    from: "issuetracker@gmail.com",
-    to: assignedEmailId,
-    subject: "Ticket Unassigned",
-    html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
-  };
-
-  transporter
-    .sendMail(msg)
-    .then(() => {
-      console.log("Email sent successfully");
-      return true;
-    })
-    .catch((err) => {
-      console.log(err);
-      throw Error("Something went wrong while sending ticket unassigned email");
     });
 };
 
@@ -287,6 +238,81 @@ export const sendTransferOwnershipMail = async (
     })
     .catch((err) => {
       console.log(err);
-      throw Error("Something went wrong while sending transfer ownership email");
+      throw Error(
+        "Something went wrong while sending transfer ownership email"
+      );
+    });
+};
+
+export const sendTicketAssignedEmail = async (
+  project: Project,
+  ticket: Ticket,
+  assignedEmailIds: string[]
+) => {
+  const frontendLink = `http://localhost:3000`;
+
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: assignedEmailIds,
+    subject: "Ticket Assigned",
+    html: `You have been assigned the ticket ${ticket.name} in the project ${project.name}, please click on this <a href="${frontendLink}">link</a> to go to the website`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticked assigned email");
+    });
+};
+
+export const sendTicketUnassignedEmail = async (
+  project: Project,
+  ticket: Ticket,
+  assignedEmailId: string
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: assignedEmailId,
+    subject: "Ticket Unassigned",
+    html: `You have been unassigned from the ticket ${ticket.name} from the project ${project.name}.`,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending ticket unassigned email");
+    });
+};
+
+export const sendCommentCreatedEmail = async (
+  issueActivity: IssueActivity,
+  ticket: Ticket,
+  emailIds: string[]
+) => {
+  const msg = {
+    from: "issuetracker@gmail.com",
+    to: emailIds,
+    subject: `Ticket ${ticket.name}`,
+    html: issueActivity.text,
+  };
+
+  transporter
+    .sendMail(msg)
+    .then(() => {
+      console.log("Email sent successfully");
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      throw Error("Something went wrong while sending comment created email");
     });
 };
