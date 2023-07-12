@@ -24,6 +24,7 @@ const S3_BUCKET = process.env.S3_BUCKET_NAME;
 const upload = multer({
   storage: multerS3({
     s3: s3Config,
+    acl: "public-read",
     bucket: S3_BUCKET!,
     metadata: function (req, file, cb) {
       cb(null, { fieldName: file.fieldname });
