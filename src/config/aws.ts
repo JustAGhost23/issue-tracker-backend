@@ -2,6 +2,7 @@ import aws from "aws-sdk";
 import { S3Client } from "@aws-sdk/client-s3";
 import multer from "multer";
 import multerS3 from "multer-s3";
+import path from "path";
 
 aws.config.update({
   accessKeyId: process.env.ACCESS_KEY!,
@@ -30,7 +31,7 @@ const upload = multer({
       cb(null, { fieldName: file.fieldname });
     },
     key: function (req, file, cb) {
-      file.filename = Date.now().toString();
+      file.filename = Date.now().toString() + path.extname(file.originalname);
       cb(null, file.filename);
     },
   }),
