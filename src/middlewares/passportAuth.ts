@@ -9,6 +9,7 @@ import {
   refreshTokenExtractor,
 } from "../utils/tokenExtractor.js";
 import crypto from "crypto";
+import { extractUsernameFromEmail } from "../utils/extractUsername.js";
 
 const JwtAuthCallback = async (jwt_payload: JwtPayload, done: any) => {
   try {
@@ -99,16 +100,16 @@ const GoogleAuthCallback = async (
       return done(null, savedUser);
     }
 
-    const username = profile.username;
+    let username = extractUsernameFromEmail(profile._json.email);
 
-    const foundUsername = await prisma.user.findUnique({
+    const foundUsername = await prisma.user.findFirst({
       where: {
         username: username,
       },
     });
     if (foundUsername) {
       username.concat("#");
-      username.concat(crypto.randomInt(0, 10000));
+      username.concat(crypto.randomInt(0, 10000).toString());
     }
 
     console.log("User does not exist");

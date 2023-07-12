@@ -19,12 +19,12 @@ export const refreshUserToken = (req: Request, res = response) => {
       email: user.email,
     },
     process.env.TOKEN_SECRET!,
-    { expiresIn: "5s" }
+    { expiresIn: "30m" }
   );
 
   // Sending cookie with the token
   res
     .status(200)
-    .cookie("jwt", accessToken, { maxAge: 5 * 1000, httpOnly: true })
+    .cookie("jwt", accessToken, { maxAge: 30 * 60 * 1000, httpOnly: true })
     .send("Refreshed access token successfully");
 };

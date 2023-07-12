@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import { User } from "@prisma/client";
+import { redisClient } from "../config/db.js";
 
 export const generateAccessToken = (user: User) => {
   // Create JWT Token
@@ -40,7 +41,7 @@ export const generateRefreshToken = (user: User) => {
   return refreshToken;
 };
 
-export const generateTokens = (req: Request, res: Response) => {
+export const generateTokens = async (req: Request, res: Response) => {
   const user = req.user as User;
   // Create JWT Token
   const accessToken = jwt.sign(
@@ -68,7 +69,7 @@ export const generateTokens = (req: Request, res: Response) => {
   if (!refreshToken) {
     throw Error("Something went wrong while generating refresh token");
   }
-
+  
   // Sending cookie with the token
   res
     .status(200)
@@ -80,5 +81,5 @@ export const generateTokens = (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
     })
-    .send("Generated refresh token generated successfully");
+    .send("Logged in successfully");
 };

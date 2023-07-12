@@ -1,13 +1,23 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, RequestHandler } from "express";
 import { User } from "@prisma/client";
+import { redisClient } from "../../config/db.js";
 
 /**
  @route POST /api/auth/refresh
  @type RequestHandler
  */
 
-export const refreshAccessToken: RequestHandler = (req: Request, res: Response) => {
+export const refreshAccessToken: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  // Check if Refresh token is valid
+  const valid = await redisClient.get(`blacklist_${req.cookies["refresh"]}`);
+  if (valid) {
+    return res.status(401).send({ error: "Unauthorized" });
+  }
+
   const user = req.user as User;
 
   // Create JWT Token

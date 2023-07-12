@@ -30,7 +30,7 @@ const authRouter: Router = Router();
  @route /api/auth/google
  @desc Login using Google Account
  */
-authRouter.get(
+authRouter.post(
   "/google",
   passport.authenticate("google", {
     session: false,

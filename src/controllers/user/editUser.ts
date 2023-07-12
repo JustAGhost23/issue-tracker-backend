@@ -1,6 +1,6 @@
 import { Role, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
-import { prisma } from "../../config/db.js";
+import { prisma, redisClient } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { hashPassword } from "../../utils/password.js";
 import { z } from "zod";
@@ -173,24 +173,33 @@ export const editUser = async (req: Request, res: Response) => {
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
 
-      res
-        .status(200)
-        .clearCookie("jwt")
-        .clearCookie("refresh")
-        .cookie("jwt", accessToken, {
-          maxAge: 30 * 60 * 1000,
-          httpOnly: true,
-        })
-        .cookie("refresh", refreshToken, {
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          httpOnly: true,
-        })
-        .send({
-          data: {
-            newUser,
-          },
-          message: "Edited user successfully",
+      try {
+        await redisClient.SADD("refresh", refreshToken);
+
+        res
+          .status(200)
+          .clearCookie("jwt")
+          .clearCookie("refresh")
+          .cookie("jwt", accessToken, {
+            maxAge: 30 * 60 * 1000,
+            httpOnly: true,
+          })
+          .cookie("refresh", refreshToken, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+          })
+          .send({
+            data: {
+              newUser,
+            },
+            message: "Edited user successfully",
+          });
+      } catch (err) {
+        console.log(err);
+        res.status(500).send({
+          error: "Something went wrong while storing refresh token",
         });
+      }
     }
   } catch (err) {
     console.log(err);

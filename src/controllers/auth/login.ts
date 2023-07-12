@@ -1,5 +1,5 @@
 import { User, Provider } from "@prisma/client";
-import { prisma } from "../../config/db.js";
+import { prisma, redisClient } from "../../config/db.js";
 import { RequestHandler, Request, Response } from "express";
 import { validate } from "../../utils/zodValidateRequest.js";
 import { verifyPassword } from "../../utils/password.js";
@@ -111,21 +111,22 @@ export const login = async (req: Request, res: Response) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    res.status(200)
-    .cookie("jwt", accessToken, {
-      maxAge: 30 * 60 * 1000,
-      httpOnly: true,
-    })
-    .cookie("refresh", refreshToken, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-    })
-    .send({
-      data: {
-        newUser,
-      },
-      message: "Logged in successfully",
-    });
+    res
+      .status(200)
+      .cookie("jwt", accessToken, {
+        maxAge: 30 * 60 * 1000,
+        httpOnly: true,
+      })
+      .cookie("refresh", refreshToken, {
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      })
+      .send({
+        data: {
+          newUser,
+        },
+        message: "Logged in successfully",
+      });
   } catch (err) {
     res.status(500).send({
       error: "Something went wrong while logging in",
