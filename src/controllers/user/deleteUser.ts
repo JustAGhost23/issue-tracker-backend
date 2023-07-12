@@ -20,7 +20,7 @@ const deleteUserSchema = z.object({
 
 /**
  @route POST /api/user/:username/delete
- @type Request Handler
+ @type RequestHandler
  */
 
 export const deleteUserValidator: RequestHandler = validate(deleteUserSchema);
@@ -50,14 +50,14 @@ export const deleteUser = async (req: Request, res: Response) => {
       },
     });
 
-    if (user.role !== Role.ADMIN) {
-      if (projects) {
-        return res.status(409).send({
-          error:
-            "This user owns projects, please delete them or transfer ownership",
-        });
-      }
+    if (projects.length !== 0) {
+      return res.status(409).send({
+        error:
+          "This user owns projects, please delete them or transfer ownership",
+      });
+    }
 
+    if (user.role !== Role.ADMIN) {
       if (user.id !== delUser.id) {
         return res.status(400).send({
           error:
@@ -65,27 +65,10 @@ export const deleteUser = async (req: Request, res: Response) => {
         });
       }
     } else {
-      if (projects) {
-        projects.forEach(async (project) => {
-          const updateProjects = await prisma.project.update({
-            where: {
-              id: project.id,
-            },
-            data: {
-              createdBy: {
-                connect: {
-                  id: user.id,
-                },
-              },
-            },
-          });
-          if (!updateProjects) {
-            return res.status(400).send({
-              error:
-                "Something went wrong while transferring ownership to admin",
-            });
-          }
-        });
+      if (delUser.role === Role.ADMIN && user.id !== delUser.id) {
+        return res
+          .status(400)
+          .send({ error: "Admins cannot be deleted by other admins" });
       }
     }
 

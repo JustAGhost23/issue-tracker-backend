@@ -93,6 +93,12 @@ export const editUser = async (req: Request, res: Response) => {
           .status(400)
           .send({ error: "Cannot edit other users passwords" });
       }
+
+      if (updateUser.role === Role.ADMIN && user.id !== updateUser.id) {
+        return res
+          .status(400)
+          .send({ error: "Admins cannot be edited by other admins" });
+      }
     }
 
     if (req.body.username) {

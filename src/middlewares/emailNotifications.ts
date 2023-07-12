@@ -86,7 +86,7 @@ export const sendForgotPasswordEmail = async (user: User) => {
     from: "issuetracker@gmail.com",
     to: user.email,
     subject: "Password Reset",
-    html: `Please click on this <a href="${verificationLink}">link</a> to reset your password. Link is valid for 7 days`,
+    html: `Please click on this <a href="${verificationLink}">link</a> to reset your password. Link is valid for 1 hour.`,
   };
 
   transporter
