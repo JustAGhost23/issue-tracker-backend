@@ -24,6 +24,11 @@ import {
   getTicketComments,
   getTicketCommentsValidator,
 } from "../controllers/ticket/getTicketComments.js";
+import { upload } from "../config/aws.js";
+import {
+  uploadFile,
+  uploadFileValidator,
+} from "../controllers/ticket/uploadFile.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -88,6 +93,18 @@ ticketRouter.get(
   passportJWT,
   getTicketCommentsValidator,
   getTicketComments
+);
+
+/**
+ @route /api/ticket/:ticketId/upload
+ @desc Upload file
+ */
+ticketRouter.get(
+  "/:ticketId/upload",
+  passportJWT,
+  upload.single("file"),
+  uploadFileValidator,
+  uploadFile
 );
 
 export default ticketRouter;
