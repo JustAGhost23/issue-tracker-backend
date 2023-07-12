@@ -173,33 +173,24 @@ export const editUser = async (req: Request, res: Response) => {
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
 
-      try {
-        await redisClient.SADD("refresh", refreshToken);
-
-        res
-          .status(200)
-          .clearCookie("jwt")
-          .clearCookie("refresh")
-          .cookie("jwt", accessToken, {
-            maxAge: 30 * 60 * 1000,
-            httpOnly: true,
-          })
-          .cookie("refresh", refreshToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            httpOnly: true,
-          })
-          .send({
-            data: {
-              newUser,
-            },
-            message: "Edited user successfully",
-          });
-      } catch (err) {
-        console.log(err);
-        res.status(500).send({
-          error: "Something went wrong while storing refresh token",
+      res
+        .status(200)
+        .clearCookie("jwt")
+        .clearCookie("refresh")
+        .cookie("jwt", accessToken, {
+          maxAge: 30 * 60 * 1000,
+          httpOnly: true,
+        })
+        .cookie("refresh", refreshToken, {
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+        })
+        .send({
+          data: {
+            newUser,
+          },
+          message: "Edited user successfully",
         });
-      }
     }
   } catch (err) {
     console.log(err);

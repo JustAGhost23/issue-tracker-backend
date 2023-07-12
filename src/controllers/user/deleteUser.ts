@@ -1,6 +1,6 @@
 import { Role, User } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
-import { prisma } from "../../config/db.js";
+import { prisma, redisClient } from "../../config/db.js";
 import { getCurrentUser } from "../../middlewares/user.js";
 import { z } from "zod";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -36,7 +36,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     const delUser = await prisma.user.findUnique({
       where: {
-        username: req.body.username,
+        username: req.params.username,
       },
     });
     if (!delUser) {
@@ -67,7 +67,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     } else {
       if (projects) {
         const newProjects = projects.map((project) => {
-          project.createdById = delUser.id;
+          project.createdById = user.id;
         });
         const updateProjects = await prisma.project.updateMany({
           where: {
@@ -76,12 +76,9 @@ export const deleteUser = async (req: Request, res: Response) => {
           data: newProjects,
         });
         if (!updateProjects) {
-          return res
-            .status(400)
-            .send({
-              error:
-                "Something went wrong while transferring ownership to admin",
-            });
+          return res.status(400).send({
+            error: "Something went wrong while transferring ownership to admin",
+          });
         }
       }
     }
@@ -99,11 +96,30 @@ export const deleteUser = async (req: Request, res: Response) => {
       return;
     }
 
-    // Clear JWT Token
-    res
-      .status(200)
-      .clearCookie("jwt")
-      .send({ message: "Deleted account successfully" });
+    // Deleted user successfully
+    if (user.id !== delUser.id) {
+      res.status(200).send({ message: "Deleted account successfully" });
+    } else {
+      try {
+        await redisClient.set(
+          `blacklist_${req.cookies["refresh"]}`,
+          req.cookies["refresh"],
+          {
+            EX: 7 * 24 * 60 * 60,
+          }
+        );
+
+        res
+          .status(200)
+          .clearCookie("jwt")
+          .clearCookie("refresh")
+          .send({ message: "Deleted user successfully" });
+      } catch (err) {
+        res.status(500).send({
+          error: "Something went wrong while deleting user",
+        });
+      }
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({
