@@ -133,6 +133,9 @@ export const getUserTickets = async (req: Request, res: Response) => {
             createdAt: true,
             updatedAt: true,
           },
+          orderBy: {
+            id: "asc",
+          },
         });
       } else {
         // Without cursor
@@ -178,10 +181,16 @@ export const getUserTickets = async (req: Request, res: Response) => {
             createdAt: true,
             updatedAt: true,
           },
+          orderBy: {
+            id: "asc",
+          },
         });
       }
-      if (!tickets) {
-        return res.status(404).send({ error: "No tickets found" });
+      if (tickets.length === 0) {
+        return res.status(200).send({
+          data: tickets,
+          nextCursor: req.query.cursor,
+        });
       }
       // Get cursor parameters
       const lastTicket = tickets[tickets.length - 1];

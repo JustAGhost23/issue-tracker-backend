@@ -174,8 +174,11 @@ export const getTicketComments = async (req: Request, res: Response) => {
           },
         });
       }
-      if (!comments) {
-        return res.status(404).send({ error: "No comments found" });
+      if (comments.length === 0) {
+        return res.status(200).send({
+          data: comments,
+          nextCursor: req.query.cursor,
+        });
       }
       // Get cursor parameters
       const lastComment = comments[comments.length - 1];

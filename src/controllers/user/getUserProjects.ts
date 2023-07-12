@@ -206,8 +206,11 @@ export const getUserProjects = async (req: Request, res: Response) => {
             id: "asc",
           },
         });
-        if (!projects) {
-          return res.status(404).send({ error: "No comments found" });
+        if (projects.length === 0) {
+          return res.status(200).send({
+            data: projects,
+            nextCursor: req.query.cursor,
+          });
         }
         // Get cursor parameters
         const lastProject = projects[projects.length - 1];

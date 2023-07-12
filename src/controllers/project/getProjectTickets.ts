@@ -216,8 +216,11 @@ export const getProjectTickets = async (req: Request, res: Response) => {
           },
         });
       }
-      if (!tickets) {
-        return res.status(404).send({ error: "No projects found" });
+      if (tickets.length === 0) {
+        return res.status(200).send({
+          data: tickets,
+          nextCursor: req.query.cursor,
+        });
       }
       // Get cursor parameters
       const lastTicket = tickets[tickets.length - 1];

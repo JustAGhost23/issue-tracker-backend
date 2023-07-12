@@ -116,8 +116,11 @@ export const getAllRequests = async (req: Request, res: Response) => {
           },
         });
       }
-      if (!requests) {
-        return res.status(404).send({ error: "No requests found" });
+      if (requests.length === 0) {
+        return res.status(200).send({
+          data: requests,
+          nextCursor: req.query.cursor,
+        });
       }
       // Get cursor parameters
       const lastRequest = requests[requests.length - 1];

@@ -176,8 +176,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
           },
         });
       }
-      if (!users) {
-        return res.status(404).send({ error: "No users found" });
+      if (users.length === 0) {
+        return res.status(200).send({
+          data: users,
+          nextCursor: req.query.cursor,
+        });
       }
       // Get cursor parameters
       const lastUser = users[users.length - 1];
