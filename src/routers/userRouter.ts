@@ -25,6 +25,10 @@ import {
   getUserComments,
   getUserCommentsValidator,
 } from "../controllers/user/getUserComments.js";
+import {
+  getUserRequest,
+  getUserRequestValidator,
+} from "../controllers/user/getUserRequest.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -84,6 +88,17 @@ userRouter.get(
   passportJWT,
   getUserCommentsValidator,
   getUserComments
+);
+
+/**
+ @route /api/user/:username/request
+ @desc Get user request
+ */
+userRouter.get(
+  "/:username/request",
+  passportJWT,
+  getUserRequestValidator,
+  getUserRequest
 );
 
 /**
