@@ -101,7 +101,7 @@ model Files {
   id           Int      @id @default(autoincrement())
   originalName String
   filename     String   @unique
-  filepath     String
+  location     String
   mimetype     String
   size         Int
   ticket       Ticket   @relation(fields: [ticketId], references: [id])

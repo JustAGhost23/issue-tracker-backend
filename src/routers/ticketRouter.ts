@@ -29,6 +29,14 @@ import {
   uploadFile,
   uploadFileValidator,
 } from "../controllers/ticket/uploadFile.js";
+import {
+  getFileByFilename,
+  getFileByFilenameValidator,
+} from "../controllers/ticket/getFileByFilename.js";
+import {
+  deleteFile,
+  deleteFileValidator,
+} from "../controllers/ticket/deleteFile.js";
 
 const passportJWT = passport.authenticate("jwt", { session: false });
 
@@ -99,12 +107,34 @@ ticketRouter.get(
  @route /api/ticket/:ticketId/upload
  @desc Upload file
  */
-ticketRouter.get(
+ticketRouter.post(
   "/:ticketId/upload",
   passportJWT,
   upload.single("file"),
   uploadFileValidator,
   uploadFile
+);
+
+/**
+ @route /api/ticket/:ticketId/download/:filename
+ @desc Download File
+ */
+ticketRouter.get(
+  "/:ticketId/download/:filename",
+  passportJWT,
+  getFileByFilenameValidator,
+  getFileByFilename
+);
+
+/**
+ @route /api/ticket/:ticketId/delete/:filename
+ @desc Delete File
+ */
+ticketRouter.post(
+  "/:ticketId/delete/:filename",
+  passportJWT,
+  deleteFileValidator,
+  deleteFile
 );
 
 export default ticketRouter;

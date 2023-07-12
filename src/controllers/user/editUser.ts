@@ -1,4 +1,4 @@
-import { Role, User } from "@prisma/client";
+import { Provider, Role, User } from "@prisma/client";
 import { RequestHandler, Request, Response } from "express";
 import { prisma, redisClient } from "../../config/db.js";
 import { validate } from "../../utils/zodValidateRequest.js";
@@ -84,6 +84,9 @@ export const editUser = async (req: Request, res: Response) => {
       }
 
       if (req.body.password) {
+        if (!updateUser.password) {
+          updateUser.provider.push(Provider.LOCAL);
+        }
         const hashed = await hashPassword(req.body.password);
         updateUser.password = hashed;
       }

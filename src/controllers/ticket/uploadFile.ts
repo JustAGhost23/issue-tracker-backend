@@ -29,7 +29,7 @@ export const uploadFileValidator: RequestHandler = validate(uploadFileSchema);
 
 export const uploadFile = async (req: Request, res: Response) => {
   try {
-    const file = req.file;
+    const file = req.file as Express.MulterS3.File;
     if (!file) {
       return res.status(404).send({ error: "File not found" });
     }
@@ -48,7 +48,7 @@ export const uploadFile = async (req: Request, res: Response) => {
       data: {
         originalName: file.originalname,
         filename: file.filename,
-        filepath: file.path,
+        location: file.location,
         mimetype: file.mimetype,
         size: file.size,
         ticket: {

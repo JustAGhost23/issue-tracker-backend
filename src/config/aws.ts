@@ -1,7 +1,15 @@
+import aws from "aws-sdk";
 import { S3Client } from "@aws-sdk/client-s3";
 import multer from "multer";
 import multerS3 from "multer-s3";
-import { prisma } from "./db.js";
+
+aws.config.update({
+  accessKeyId: process.env.ACCESS_KEY!,
+  secretAccessKey: process.env.ACCESS_SECRET!,
+  region: process.env.REGION,
+});
+
+const s3 = new aws.S3();
 
 const s3Config = new S3Client({
   region: process.env.REGION,
@@ -21,9 +29,14 @@ const upload = multer({
       cb(null, { fieldName: file.fieldname });
     },
     key: function (req, file, cb) {
-      cb(null, Date.now().toString());
+      file.filename = Date.now().toString();
+      cb(null, file.filename);
     },
   }),
+  limits: {
+    // Max Size is 20MB
+    fileSize: 1024 * 1024 * 20,
+  },
 });
 
-export { upload };
+export { s3, upload };

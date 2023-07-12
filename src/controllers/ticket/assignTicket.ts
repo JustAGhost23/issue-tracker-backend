@@ -117,7 +117,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     // Get all users to be assigned
     const users = await prisma.user.findMany({
       where: {
-        id: req.body.userIds,
+        id: { in: req.body.userIds },
       },
       select: {
         id: true,
@@ -237,7 +237,11 @@ export const assignTicket = async (req: Request, res: Response) => {
     });
 
     try {
-      await sendTicketAssignedEmail(issueActivity, updateTicket, assignedEmailIds);
+      await sendTicketAssignedEmail(
+        issueActivity,
+        updateTicket,
+        assignedEmailIds
+      );
 
       // Email sent successfully
       return res.status(200).send({
