@@ -66,20 +66,26 @@ export const deleteUser = async (req: Request, res: Response) => {
       }
     } else {
       if (projects) {
-        const newProjects = projects.map((project) => {
-          project.createdById = user.id;
-        });
-        const updateProjects = await prisma.project.updateMany({
-          where: {
-            createdById: delUser.id,
-          },
-          data: newProjects,
-        });
-        if (!updateProjects) {
-          return res.status(400).send({
-            error: "Something went wrong while transferring ownership to admin",
+        projects.forEach(async (project) => {
+          const updateProjects = await prisma.project.update({
+            where: {
+              id: project.id,
+            },
+            data: {
+              createdBy: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
           });
-        }
+          if (!updateProjects) {
+            return res.status(400).send({
+              error:
+                "Something went wrong while transferring ownership to admin",
+            });
+          }
+        });
       }
     }
 

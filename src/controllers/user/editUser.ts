@@ -12,16 +12,16 @@ import { getCurrentUser } from "../../middlewares/user.js";
 
 // Zod schema to validate request
 const editUserSchema = z.object({
+  params: z.object({
+    username: z
+      .string({
+        invalid_type_error: "Username is not a string",
+        required_error: "Username is required",
+      })
+      .min(8, { message: "Must be at least 8 characters long" })
+      .max(20, { message: "Must be at most 20 characters long" }),
+  }),
   body: z.object({
-    params: z.object({
-      username: z
-        .string({
-          invalid_type_error: "Username is not a string",
-          required_error: "Username is required",
-        })
-        .min(8, { message: "Must be at least 8 characters long" })
-        .max(20, { message: "Must be at most 20 characters long" }),
-    }),
     username: z
       .string({
         invalid_type_error: "Username is not a string",
@@ -130,6 +130,7 @@ export const editUser = async (req: Request, res: Response) => {
         name: true,
         email: true,
         provider: true,
+        role: true,
         projectsOwned: {
           select: {
             id: true,
@@ -167,7 +168,7 @@ export const editUser = async (req: Request, res: Response) => {
       return res.status(500).send({ error: "Error while editing user" });
     }
 
-    if (user.id != newUser.id) {
+    if (user.id !== newUser.id) {
       res.status(200).send({ message: "Edited user successfully" });
     } else {
       const accessToken = generateAccessToken(user);
