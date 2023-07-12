@@ -59,7 +59,8 @@ model Ticket {
   comments      Comment[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  IssueActivity IssueActivity[]
+  issueActivity IssueActivity[]
+  files         Files[]
 
   @@unique([name, projectId])
 }
@@ -94,6 +95,19 @@ model Requests {
   role      Role
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Files {
+  id           Int      @id @default(autoincrement())
+  originalName String
+  filename     String   @unique
+  filepath     String
+  mimetype     String
+  size         Int
+  ticket       Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 enum Provider {
