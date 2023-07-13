@@ -181,6 +181,8 @@ export const createTicket = async (req: Request, res: Response) => {
             updatedAt: true,
           },
         },
+        comments: true,
+        files: true,
         number: true,
         createdAt: true,
         updatedAt: true,
