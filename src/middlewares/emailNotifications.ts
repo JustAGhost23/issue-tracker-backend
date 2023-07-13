@@ -270,11 +270,11 @@ export const sendTicketCreatedEmail = async (
 export const sendTicketAssignedEmail = async (
   issueActivity: IssueActivity,
   ticket: Ticket,
-  emailIds: string[]
+  emailId: string
 ) => {
   const msg = {
     from: "issuetracker@gmail.com",
-    to: emailIds,
+    to: emailId,
     subject: `Ticket ${ticket.name}`,
     html: issueActivity.text,
   };

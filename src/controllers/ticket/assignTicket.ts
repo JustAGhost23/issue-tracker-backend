@@ -33,18 +33,17 @@ const assignTicketSchema = z.object({
       .int({
         message: "invalid projectId",
       }),
-    userIds: z.coerce
+    userId: z.coerce
       .number({
-        invalid_type_error: "userIds not a number",
-        required_error: "userIds is a required path parameter",
+        invalid_type_error: "userId not a number",
+        required_error: "userId is a required path parameter",
       })
       .positive({
         message: "invalid userId",
       })
       .int({
         message: "invalid userId",
-      })
-      .array(),
+      }),
   }),
 });
 
@@ -63,6 +62,20 @@ export const assignTicket = async (req: Request, res: Response) => {
     const user = await getCurrentUser(reqUser);
     if (user instanceof Error) {
       return res.status(400).send({ error: user.message });
+    }
+
+    // Get user to be assigned
+    const assignedUser = await prisma.user.findUnique({
+      where: {
+        id: req.body.userId,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+    if (!assignedUser) {
+      return res.status(404).send({ error: "User to be assigned not found" });
     }
 
     // Check if project exists
@@ -114,45 +127,21 @@ export const assignTicket = async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Ticket not found" });
     }
 
-    // Get all users to be assigned
-    const users = await prisma.user.findMany({
-      where: {
-        id: { in: req.body.userIds },
-      },
-      select: {
-        id: true,
-        email: true,
-      },
-    });
+    // Check if user to be assigned is a member of the project
+    if (
+      !project.members.some((element) => {
+        if (element.id == assignedUser.id) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return res.status(400).send({
+        error: "User to be assigned is not a member of the project",
+      });
+    }
 
-    // Check if all users to be assigned are members of the project
-    users.forEach((currUser) => {
-      if (
-        !project.members.some((element) => {
-          if (element.id == currUser.id) {
-            return true;
-          }
-          return false;
-        })
-      ) {
-        return res.status(400).send({
-          error: "User to be assigned is not a member of the project",
-        });
-      }
-    });
-
-    const assignedUserIds = req.body.userIds;
-
-    const assignedUserIdsToAssign: number[] = assignedUserIds.filter(
-      (userId: number) =>
-        !ticket?.assignees.some((assignedUser) => assignedUser.id === userId)
-    );
-
-    const assignedEmailIds = users
-      .filter((assignedUser) =>
-        assignedUserIdsToAssign.includes(assignedUser.id)
-      )
-      .map((assignedUser) => assignedUser.email);
+    const assignedEmailId = assignedUser.email;
 
     // Assign users to ticket
     const updateTicket = await prisma.ticket.update({
@@ -162,15 +151,16 @@ export const assignTicket = async (req: Request, res: Response) => {
       data: {
         status: Status.ASSIGNED,
         assignees: {
-          connect:
-            assignedUserIdsToAssign.map((userId) => ({ id: userId })) || [],
+          connect: {
+            id: assignedUser.id,
+          },
         },
       },
     });
     if (!updateTicket) {
       return res
         .status(500)
-        .send({ error: "Something went wrong while assigning users" });
+        .send({ error: "Something went wrong while assigning user" });
     }
 
     const newTicket = await prisma.ticket.findUnique({
@@ -242,7 +232,7 @@ export const assignTicket = async (req: Request, res: Response) => {
       await sendTicketAssignedEmail(
         issueActivity,
         updateTicket,
-        assignedEmailIds
+        assignedEmailId
       );
 
       // Email sent successfully

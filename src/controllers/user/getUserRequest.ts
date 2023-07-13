@@ -43,18 +43,21 @@ export const getUserRequest = async (req: Request, res: Response) => {
         authorId: user.id,
       },
     });
+    if (!request) {
+      return res.status(404).send({ error: "Request not found" });
+    }
 
     // Send user details
     res.status(200).send({
       data: {
-        user,
+        request,
       },
-      message: "User found",
+      message: "Request found",
     });
   } catch (err) {
     console.log(err);
     res.status(500).send({
-      error: "Something went wrong while getting user by username",
+      error: "Something went wrong while getting request by username",
     });
   }
 };
