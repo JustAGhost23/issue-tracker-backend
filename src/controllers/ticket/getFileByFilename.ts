@@ -39,17 +39,17 @@ export const getFileByFilename = async (req: Request, res: Response) => {
     try {
       const filename = req.params.filename;
 
-      const downloadLink = await prisma.files.findUnique({
+      const file = await prisma.files.findUnique({
         where: {
           filename: filename,
         },
       });
-      if (!downloadLink) {
-        return res.status(404).send({ error: "No download link found" });
+      if (!file) {
+        return res.status(404).send({ error: "File not found" });
       }
       return res.status(200).send({
         data: {
-            downloadLink
+            file
         },
         message: "Found file successfully",
       });
