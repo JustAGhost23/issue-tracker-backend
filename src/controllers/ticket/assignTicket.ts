@@ -143,7 +143,7 @@ export const assignTicket = async (req: Request, res: Response) => {
 
     // Check if the user has been assigned this ticket
     if (
-      !ticket.assignees.some((element) => {
+      ticket.assignees.some((element) => {
         if (element.id == assignedUser.id) {
           return true;
         }
@@ -152,7 +152,7 @@ export const assignTicket = async (req: Request, res: Response) => {
     ) {
       return res
         .status(400)
-        .send({ error: "User has not been assigned this ticket" });
+        .send({ error: "User has already been assigned this ticket" });
     }
 
     const assignedEmailId = assignedUser.email;
